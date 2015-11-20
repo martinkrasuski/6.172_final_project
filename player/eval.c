@@ -10,7 +10,8 @@
 // -----------------------------------------------------------------------------
 // Evaluation
 // -----------------------------------------------------------------------------
-
+int mark_laser_path_pinned(position_t *p, char *laser_map, color_t c,
+                           char mark_mask);
 typedef int32_t ev_score_t;  // Static evaluator uses "hi res" values
 
 int RANDOMIZE;
@@ -125,7 +126,46 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
 //             path of the laser is marked with mark_mask
 // c : color of king shooting laser
 // mark_mask: what each square is marked with
-int mark_laser_path(position_t *p, char *laser_map, color_t c,
+void mark_laser_path(position_t *p, char *laser_map, color_t c,
+                     char mark_mask) {
+  position_t np = *p;
+
+  // Fire laser, recording in laser_map
+  square_t sq = np.kloc[c];
+  int bdir = ori_of(np.board[sq]);
+
+  tbassert(ptype_of(np.board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np.board[sq]));
+  laser_map[sq] |= mark_mask;
+
+  while (true) {
+    sq += beam_of(bdir);
+    laser_map[sq] |= mark_mask;
+    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+
+    switch (ptype_of(p->board[sq])) {
+      case EMPTY:  // empty square
+        break;
+      case PAWN:  // Pawn
+        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        if (bdir < 0) {  // Hit back of Pawn
+          return;
+        }
+        break;
+      case KING:  // King
+        return;  // sorry, game over my friend!
+        break;
+      case INVALID:  // Ran off edge of board
+        return;
+        break;
+      default:  // Shouldna happen, man!
+        tbassert(false, "Not cool, man.  Not cool.\n");
+        break;
+    }
+  }
+}
+
+int mark_laser_path_pinned(position_t *p, char *laser_map, color_t c,
                      char mark_mask) {
   position_t np = *p;
 
@@ -137,7 +177,7 @@ int mark_laser_path(position_t *p, char *laser_map, color_t c,
            "ptype: %d\n", ptype_of(np.board[sq]));
   laser_map[sq] |= mark_mask;
   int pinned_pawns = 0;
-  if(color_of(p->board[sq]) == c && ptype_of(p->board[sq]) == PAWN){
+  if(color_of(p->board[sq]) != c && ptype_of(p->board[sq]) == PAWN){
     pinned_pawns++;
   }
   while (true) {
@@ -153,7 +193,7 @@ int mark_laser_path(position_t *p, char *laser_map, color_t c,
         if (bdir < 0) {  // Hit back of Pawn
           return pinned_pawns;
         }
-        if (color_of(p->board[sq]) == c) {
+        if (color_of(p->board[sq]) != c) {
           pinned_pawns++;
         }
         break;
@@ -169,7 +209,6 @@ int mark_laser_path(position_t *p, char *laser_map, color_t c,
     }
   }
 }
-
 
 // PAWNPIN Heuristic: count number of pawns that are pinned by the
 //   opposing king's laser --- and are thus immobile.
@@ -188,7 +227,7 @@ int pawnpin(position_t *p, color_t color) {
     }
   }
 
-  int pinned_pawns = mark_laser_path(p, laser_map, c, 1);  // find path of laser given that you aren't moving
+  int pinned_pawns = mark_laser_path_pinned(p, laser_map, c, 1);  // find path of laser given that you aren't moving
 
 
 
