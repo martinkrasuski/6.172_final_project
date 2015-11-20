@@ -64,7 +64,12 @@ search.c: search_scout.c
 
 
 leiserchess : leiserchess.o $(OBJ)
+
+ifndef NAME
 	$(CC) $^ $(LDFLAGS) -o $@ -lrt
+else
+	$(CC) $^ $(LDFLAGS) -o $(NAME) -lrt
+endif
 
 clean :
 	rm -f *.o *.d* *~ $(TARGET)
