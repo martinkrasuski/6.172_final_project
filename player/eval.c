@@ -10,8 +10,7 @@
 // -----------------------------------------------------------------------------
 // Evaluation
 // -----------------------------------------------------------------------------
-int mark_laser_path_pinned(position_t *p, char *laser_map, color_t c,
-                           char mark_mask);
+int mark_laser_path_pinned(position_t *p, color_t c);
 typedef int32_t ev_score_t;  // Static evaluator uses "hi res" values
 
 int RANDOMIZE;
@@ -165,8 +164,7 @@ void mark_laser_path(position_t *p, char *laser_map, color_t c,
   }
 }
 
-int mark_laser_path_pinned(position_t *p, char *laser_map, color_t c,
-                     char mark_mask) {
+int mark_laser_path_pinned(position_t *p, color_t c) {
   position_t np = *p;
 
   // Fire laser, recording in laser_map
@@ -175,14 +173,12 @@ int mark_laser_path_pinned(position_t *p, char *laser_map, color_t c,
 
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
-  laser_map[sq] |= mark_mask;
   int pinned_pawns = 0;
   if(color_of(p->board[sq]) != c && ptype_of(p->board[sq]) == PAWN){
     pinned_pawns++;
   }
   while (true) {
     sq += beam_of(bdir);
-    laser_map[sq] |= mark_mask;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
     switch (ptype_of(p->board[sq])) {
@@ -215,19 +211,7 @@ int mark_laser_path_pinned(position_t *p, char *laser_map, color_t c,
 
 int pawnpin(position_t *p, color_t color) {
   color_t c = opp_color(color);
-  char laser_map[ARR_SIZE];
-
-  for (int i = 0; i < ARR_SIZE; ++i) {
-    laser_map[i] = 4;   // Invalid square
-  }
-
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
-    }
-  }
-
-  int pinned_pawns = mark_laser_path_pinned(p, laser_map, c, 1);  // find path of laser given that you aren't moving
+  int pinned_pawns = mark_laser_path_pinned(p, c);  // find path of laser given that you aren't moving
 
 
 
