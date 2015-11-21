@@ -446,7 +446,21 @@ square_t low_level_make_move(position_t *old, position_t *p, move_t mv) {
     if (ptype_of(to_piece) == KING) {
       p->kloc[color_of(to_piece)] = from_sq;
     }
-
+    // Update pawn locations if necessary
+    if (ptype_of(from_piece) == PAWN) {
+      for(int i = 0; i < NUMBER_PAWNS; i++) {
+        if(p->plocs[color_of(from_piece)][i] == from_sq) {
+          p->plocs[color_of(from_piece)][i] = to_sq;
+        }
+      }
+    }
+    if (ptype_of(to_piece) == PAWN) {
+      for(int i = 0; i < NUMBER_PAWNS; i++) {
+        if(p->plocs[color_of(to_piece)][i] == to_sq) {
+          p->plocs[color_of(to_piece)][i] = from_sq;
+        }
+      }
+    }
   } else {  // rotation
     // remove from_piece from from_sq in hash
     p->key ^= zob[from_sq][from_piece];
@@ -531,9 +545,14 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
 
   } else {  // we definitely stomped something
     p->victims.stomped = p->board[stomped_sq];
-
+    color_t stomped_color = color_of(p->board[stomped_sq]);
     p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
     p->board[stomped_sq] = 0;
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      if(p->plocs[stomped_color][i] == stomped_sq) {
+        p->plocs[stomped_color][i] = 0;
+      }
+    }
     p->key ^= zob[stomped_sq][p->board[stomped_sq]];
 
     tbassert(p->key == compute_zob_key(p),
@@ -565,11 +584,16 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
       return KO();
     }
   } else {  // we definitely hit something with laser
+    color_t zapped_color = color_of(p->board[victim_sq]);
     p->victims.zapped = p->board[victim_sq];
     p->key ^= zob[victim_sq][p->victims.zapped];   // remove from board
     p->board[victim_sq] = 0;
     p->key ^= zob[victim_sq][0];
-
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      if(p->plocs[zapped_color][i] == victim_sq) { 
+        p->plocs[zapped_color][i] = 0;
+      }
+    }
     tbassert(p->key == compute_zob_key(p),
              "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
              p->key, compute_zob_key(p));

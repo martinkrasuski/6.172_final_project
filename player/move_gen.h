@@ -33,7 +33,7 @@ typedef int fil_t;
 #define FIL_MASK 15
 #define RNK_SHIFT 0
 #define RNK_MASK 15
-
+#define NUMBER_PAWNS 7
 // -----------------------------------------------------------------------------
 // pieces
 // -----------------------------------------------------------------------------
@@ -142,6 +142,7 @@ typedef struct position {
   move_t       last_move;        // move that led to this position
   victims_t    victims;          // pieces destroyed by shooter or stomper
   square_t     kloc[2];          // location of kings
+  square_t     plocs[2][NUMER_PAWNS];
 } position_t;
 
 // -----------------------------------------------------------------------------
