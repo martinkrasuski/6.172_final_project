@@ -30,6 +30,8 @@ typedef struct heuristics_t {
   int mobility;
 } heuristics_t;
 
+heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t * heuristics);
+
 // Heuristics for static evaluation - described in the google doc
 // mentioned in the handout.
 
@@ -173,6 +175,17 @@ void mark_laser_path(position_t *p, char *laser_map, color_t c,
   }
 }
 
+// Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
+float h_dist(square_t a, square_t b) {
+  //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
+  //  printf("b = %d, FIL(b) = %d, RNK(b) = %d\n", b, FIL(b), RNK(b));
+  int delta_fil = abs(fil_of(a) - fil_of(b));
+  int delta_rnk = abs(rnk_of(a) - rnk_of(b));
+  float x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
+  //  printf("max_dist = %d\n\n", x);
+  return x;
+}
+
 // Marks the path of the laser until it hits a piece or goes off the board.
 //
 // p : current board state
@@ -180,43 +193,72 @@ void mark_laser_path(position_t *p, char *laser_map, color_t c,
 //             path of the laser is marked with mark_mask
 // c : color of king shooting laser
 // mark_mask: what each square is marked with
-void mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t * heuristics) {
+heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t * heuristics) {
   position_t np = *p;
+  square_t king_sq = p->kloc[opp_color(c)];
+
+  float h_attackable = 0;
 
   // Fire laser, recording in laser_map
   square_t sq = np.kloc[c];
   int bdir = ori_of(np.board[sq]);
 
+  // Create a bounding box around king's square
+  int right = fil_of(king_sq)+1;
+  int left = fil_of(king_sq)-1;
+  int top = rnk_of(king_sq)+1;
+  int bottom = rnk_of(king_sq)-1;
+  
+  // Column & Row of laser Square
+  int sq_rank = rnk_of(sq);
+  int sq_file = fil_of(sq);
+
+  if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top)) {
+      heuristics->mobility--;
+  }
+  
+  // Mark any invalid squares surrounding the king as not mobile
+  for (int d = 0; d < 8; ++d) {
+    square_t new_sq = king_sq + dir_of(d);
+    if (ptype_of(p->board[new_sq]) == INVALID) {
+      heuristics->mobility--;
+    }
+  }
+
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
-  laser_map[sq] |= mark_mask;
   int beam = beam_of(bdir);
 
   while (true) { 
     sq += beam;
-    laser_map[sq] |= mark_mask;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+    if (sq_file <= right && sq_file >= left && (sq_rank >= bottom && sq_rank <= top)) {
+      heuristics->mobility--;
+    } 
 
     switch (ptype_of(p->board[sq])) {
       case EMPTY:  // empty square
-        heuristics->h_attackable += h_dist(sq, o_king_sq);
+        h_attackable += h_dist(sq, king_sq);
         break;
       case PAWN:  // Pawn
-        heuristics->h_attackable += h_dist(sq, o_king_sq);
+        h_attackable += h_dist(sq, king_sq);
         if (color_of(p->board[sq]) != c) {
           heuristics->pawnpin++;
         }
         bdir = reflect_of(bdir, ori_of(p->board[sq]));
         if (bdir < 0) {  // Hit back of Pawn
+          heuristics->h_attackable = h_attackable;
           return heuristics;
         }
         beam = beam_of(bdir);
         break;
       case KING:  // King
-        heuristics->h_attackable += h_dist(sq, o_king_sq);
+        h_attackable += h_dist(sq, king_sq);
+        heuristics->h_attackable = h_attackable;
         return heuristics;  // sorry, game over my friend!
         break;
       case INVALID:  // Ran off edge of board
+        heuristics->h_attackable = h_attackable;
         return heuristics;
         break;
       default:  // Shouldna happen, man!
@@ -346,17 +388,6 @@ int mobility(position_t *p, color_t color) {
 
 }
 
-// Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
-float h_dist(square_t a, square_t b) {
-  //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
-  //  printf("b = %d, FIL(b) = %d, RNK(b) = %d\n", b, FIL(b), RNK(b));
-  int delta_fil = abs(fil_of(a) - fil_of(b));
-  int delta_rnk = abs(rnk_of(a) - rnk_of(b));
-  float x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
-  //  printf("max_dist = %d\n\n", x);
-  return x;
-}
-
 // H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
 int h_squares_attackable(position_t *p, color_t c) {
   position_t np = *p;
@@ -481,6 +512,14 @@ score_t eval(position_t *p, bool verbose) {
       }
     }
   }
+  heuristics_t white_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
+  heuristics_t * w_heuristics = &white_heuristics;
+
+  heuristics_t black_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
+  heuristics_t * b_heuristics = &black_heuristics;
+
+  mark_laser_path_heuristics(p, WHITE, w_heuristics);
+  mark_laser_path_heuristics(p, BLACK, b_heuristics);
 
   ev_score_t w_hattackable = HATTACK * h_squares_attackable(p, WHITE);
   score[WHITE] += w_hattackable;
@@ -505,7 +544,7 @@ score_t eval(position_t *p, bool verbose) {
   }
 
   // PAWNPIN Heuristic --- is a pawn immobilized by the enemy laser.
-  int w_pawnpin = PAWNPIN * (white_pawns - pawnpin(p, WHITE));
+  int w_pawnpin = PAWNPIN * (white_pawns - b_heuristics->pawnpin);
   score[WHITE] += w_pawnpin;
   int b_pawnpin = PAWNPIN * (black_pawns - pawnpin(p, BLACK));
   score[BLACK] += b_pawnpin;
