@@ -228,11 +228,15 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
   int beam = beam_of(bdir);
+  h_attackable += h_dist(sq, king_sq);
 
   while (true) { 
     sq += beam;
+    sq_file = fil_of(sq);
+    sq_rank = rnk_of(sq);
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
-    if (sq_file <= right && sq_file >= left && (sq_rank >= bottom && sq_rank <= top)) {
+
+    if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top) && ptype_of(p->board[sq]) != INVALID) {
       heuristics->mobility--;
     } 
 
@@ -518,35 +522,35 @@ score_t eval(position_t *p, bool verbose) {
   heuristics_t black_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
   heuristics_t * b_heuristics = &black_heuristics;
 
-  mark_laser_path_heuristics(p, WHITE, w_heuristics);
-  mark_laser_path_heuristics(p, BLACK, b_heuristics);
+  mark_laser_path_heuristics(p, BLACK, w_heuristics);
+  mark_laser_path_heuristics(p, WHITE, b_heuristics);
 
-  ev_score_t w_hattackable = HATTACK * h_squares_attackable(p, WHITE);
+  ev_score_t w_hattackable = HATTACK * b_heuristics->h_attackable;
   score[WHITE] += w_hattackable;
   if (verbose) {
     printf("HATTACK bonus %d for White\n", w_hattackable);
   }
-  ev_score_t b_hattackable = HATTACK * h_squares_attackable(p, BLACK);
+  ev_score_t b_hattackable = HATTACK * w_heuristics->h_attackable;
   score[BLACK] += b_hattackable;
   if (verbose) {
     printf("HATTACK bonus %d for Black\n", b_hattackable);
   }
 
-  int w_mobility = MOBILITY * mobility(p, WHITE);
+  int w_mobility = MOBILITY * w_heuristics->mobility;
   score[WHITE] += w_mobility;
   if (verbose) {
     printf("MOBILITY bonus %d for White\n", w_mobility);
   }
-  int b_mobility = MOBILITY * mobility(p, BLACK);
+  int b_mobility = MOBILITY * b_heuristics->mobility;
   score[BLACK] += b_mobility;
   if (verbose) {
     printf("MOBILITY bonus %d for Black\n", b_mobility);
   }
 
   // PAWNPIN Heuristic --- is a pawn immobilized by the enemy laser.
-  int w_pawnpin = PAWNPIN * (white_pawns - b_heuristics->pawnpin);
+  int w_pawnpin = PAWNPIN * (white_pawns - w_heuristics->pawnpin);
   score[WHITE] += w_pawnpin;
-  int b_pawnpin = PAWNPIN * (black_pawns - pawnpin(p, BLACK));
+  int b_pawnpin = PAWNPIN * (black_pawns - b_heuristics->pawnpin);
   score[BLACK] += b_pawnpin;
 
   // score from WHITE point of view
