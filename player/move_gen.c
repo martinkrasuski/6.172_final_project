@@ -480,7 +480,7 @@ square_t low_level_make_move(position_t *old, position_t *p, move_t mv) {
       fprintf(stderr, "After:\n");
       display(p);
     });
-
+  //assert_pawn_locs(p);
   return stomped_dst_sq;
 }
 
@@ -603,7 +603,7 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
         DEBUG_LOG(1, "Zapped piece on %s\n", buf);
       });
   }
-
+  //assert_pawn_locs(p);
   return p->victims;
 }
 
@@ -757,4 +757,31 @@ bool zero_victims(victims_t victims) {
 bool victim_exists(victims_t victims) {
   return (victims.stomped > 0) ||
       (victims.zapped > 0);
+}
+
+void assert_pawn_locs(position_t * p) {
+  /*  for(int c = 0; c < 2; c++) {
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      square_t sq = p->plocs[c][i];
+      printf("pawn color %d square %d fil %d rnk %d\n", c, sq, fil_of(sq), rnk_of(sq));
+    }
+    }*/
+  for (fil_t f = 0; f < BOARD_WIDTH; f++) {
+    for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
+      square_t sq = square_of(f,r);
+      piece_t x = p->board[sq];
+
+      ptype_t typ = ptype_of(x);
+      color_t color = color_of(x);
+      if(typ == PAWN) {
+        bool pawn_in_pawnlocs = false;
+        for(int i = 0; i < NUMBER_PAWNS; i++) {
+          if(p->plocs[color][i] == sq) {
+            pawn_in_pawnlocs = true;
+          }
+        }
+        tbassert(pawn_in_pawnlocs, "square %d fil %d rnk %d\n", sq, fil_of(sq), rnk_of(sq));
+      }
+    }
+  }
 }

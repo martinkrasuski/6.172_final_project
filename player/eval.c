@@ -388,7 +388,10 @@ score_t eval(position_t *p, bool verbose) {
   for(int c = 0; c < 2; c++) {
     for(int i = 0; i < NUMBER_PAWNS; i++) {
       square_t sq = p->plocs[c][i];
-      if(color == WHITE) {
+      if(sq == 0) continue;
+      fil_t f = fil_of(sq);
+      rnk_t r = rnk_of(sq);
+      if(c == WHITE) {
          white_pawns++;
       } else {
          black_pawns++;
@@ -415,7 +418,24 @@ score_t eval(position_t *p, bool verbose) {
       score[c] += bonus;
     }
   }
+  for(int c = 0; c < 2; c++) {
+    square_t sq = p->kloc[c];
+    fil_t f = fil_of(sq);
+    rnk_t r = rnk_of(sq);
+    bonus = kface(p, f, r);
+    if (verbose) {
+      printf("KFACE bonus %d for %s King on %s\n", bonus,
+      color_to_str(c), buf);
+    }
+    score[c] += bonus;
 
+    // KAGGRESSIVE heuristic
+    bonus = kaggressive(p, f, r);
+    if (verbose) {
+      printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
+    }
+    score[c] += bonus;
+  }
   ev_score_t w_hattackable = HATTACK * h_squares_attackable(p, WHITE);
   score[WHITE] += w_hattackable;
   if (verbose) {

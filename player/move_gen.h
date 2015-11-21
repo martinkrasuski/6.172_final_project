@@ -142,7 +142,7 @@ typedef struct position {
   move_t       last_move;        // move that led to this position
   victims_t    victims;          // pieces destroyed by shooter or stomper
   square_t     kloc[2];          // location of kings
-  square_t     plocs[2][NUMER_PAWNS];
+  square_t     plocs[2][NUMBER_PAWNS];
 } position_t;
 
 // -----------------------------------------------------------------------------
@@ -190,4 +190,5 @@ bool victim_exists(victims_t victims);
 
 void mark_laser_path(position_t *p, char *laser_map, color_t c,
                      char mark_mask);
+void assert_pawn_locs(position_t * p);
 #endif  // MOVE_GEN_H
