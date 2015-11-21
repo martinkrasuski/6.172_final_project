@@ -287,7 +287,7 @@ int h_squares_attackable(position_t *p, color_t c) {
  
   // Fire laser, recording in laser_map
   square_t sq = np.kloc[c];
-  int _bdir = ori_of(np.board[sq]);
+  int bdir = ori_of(np.board[sq]);
 
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
