@@ -1,2 +1,2 @@
-go depth 5
+go depth 7
 quit
