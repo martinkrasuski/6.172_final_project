@@ -279,13 +279,15 @@ float h_dist(square_t a, square_t b) {
 // H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
 int h_squares_attackable(position_t *p, color_t c) {
   position_t np = *p;
-
+  
+  // h_attackable adds the harmonic distance from a marked laser square to the enemy square
+  // closer the laser is to enemy king, higher the value is
   float h_attackable = 0;
   square_t o_king_sq = p->kloc[opp_color(c)];
  
   // Fire laser, recording in laser_map
   square_t sq = np.kloc[c];
-  int bdir = ori_of(np.board[sq]);
+  int _bdir = ori_of(np.board[sq]);
 
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
@@ -320,42 +322,7 @@ int h_squares_attackable(position_t *p, color_t c) {
     }
   }
 }
-/*
-// H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
-int h_squares_attackable(position_t *p, color_t c) {
 
-  char laser_map[ARR_SIZE];
-
-  for (int i = 0; i < ARR_SIZE; ++i) {
-    laser_map[i] = 4;   // Invalid square
-  }
-
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
-    }
-  }
-
-  mark_laser_path(p, laser_map, c, 1);  // 1 = path of laser with no moves
-
-  square_t o_king_sq = p->kloc[opp_color(c)];
-  tbassert(ptype_of(p->board[o_king_sq]) == KING,
-           "ptype: %d\n", ptype_of(p->board[o_king_sq]));
-  tbassert(color_of(p->board[o_king_sq]) != c,
-           "color: %d\n", color_of(p->board[o_king_sq]));
-
-  float h_attackable = 0;
-  for (fil_t f = 0; f < BOARD_WIDTH; f++) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-      square_t sq = square_of(f, r);
-      if (laser_map[sq] != 0) {
-        h_attackable += h_dist(sq, o_king_sq);
-      }
-    }
-  }
-  return h_attackable;
-}
-*/
 // Static evaluation.  Returns score
 score_t eval(position_t *p, bool verbose) {
   // seed rand_r with a value of 1, as per
