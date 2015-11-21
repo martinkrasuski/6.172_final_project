@@ -107,6 +107,7 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
 
   if (delta_fil >= 0 && delta_rnk >= 0) {
     bonus = (f + 1) * (r + 1);
+
   } else if (delta_fil <= 0 && delta_rnk >= 0) {
     bonus = (BOARD_WIDTH - f) * (r + 1);
   } else if (delta_fil <= 0 && delta_rnk <= 0) {
@@ -216,39 +217,76 @@ int pawnpin(position_t *p, color_t color) {
 // MOBILITY heuristic: safe squares around king of color color.
 int mobility(position_t *p, color_t color) {
   color_t c = opp_color(color);
-  char laser_map[ARR_SIZE];
+  position_t np = *p;
+  int mobility = 9;
 
-  for (int i = 0; i < ARR_SIZE; ++i) {
-    laser_map[i] = 4;   // Invalid square
-  }
+  // Fire laser, recording in laser_map
+  square_t sq = np.kloc[c];
+  int bdir = ori_of(np.board[sq]);
 
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
-    }
-  }
-
-  mark_laser_path(p, laser_map, c, 1);  // find path of laser given that you aren't moving
-
-  int mobility = 0;
+  tbassert(ptype_of(np.board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np.board[sq]));
+  
   square_t king_sq = p->kloc[color];
-  tbassert(ptype_of(p->board[king_sq]) == KING,
-           "ptype: %d\n", ptype_of(p->board[king_sq]));
-  tbassert(color_of(p->board[king_sq]) == color,
-           "color: %d\n", color_of(p->board[king_sq]));
+  
+  // Create a bounding box around king's square
+  int right = fil_of(king_sq)+1;
+  int left = fil_of(king_sq)-1;
+  int top = rnk_of(king_sq)+1;
+  int bottom = rnk_of(king_sq)-1;
+  
+  // Column & Row of laser Square
+  int sq_rank = rnk_of(sq);
+  int sq_file = fil_of(sq);
 
-  if (laser_map[king_sq] == 0) {
-    mobility++;
+  if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top)) {
+      mobility--;
   }
+  
+  // Mark any invalid squares surrounding the king as not mobile
   for (int d = 0; d < 8; ++d) {
-    square_t sq = king_sq + dir_of(d);
-    if (laser_map[sq] == 0) {
-      mobility++;
+    square_t new_sq = king_sq + dir_of(d);
+    if (ptype_of(p->board[new_sq]) == INVALID) {
+      mobility--;
     }
   }
-  return mobility;
-}
 
+  int beam = beam_of(bdir);
+
+  while (true) { 
+    sq += beam;
+    sq_file = fil_of(sq);
+    sq_rank = rnk_of(sq);
+  
+    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+
+    if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top) && ptype_of(p->board[sq]) != INVALID) {
+      mobility--;
+    }  
+
+    switch (ptype_of(p->board[sq])) {
+      case EMPTY:  // empty square
+        break;
+      case PAWN:  // Pawn
+        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        if (bdir < 0) {  // Hit back of Pawn
+          return mobility;
+        }
+        beam = beam_of(bdir);
+        break;
+      case KING:  // King
+        return mobility;  // sorry, game over my friend!
+        break;
+      case INVALID:  // Ran off edge of board
+        return mobility;
+        break;
+      default:  // Shouldna happen, man!
+        tbassert(false, "Not cool, man.  Not cool.\n");
+        break;
+    }
+  }
+
+}
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
 float h_dist(square_t a, square_t b) {
