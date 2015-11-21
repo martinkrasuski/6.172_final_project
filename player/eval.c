@@ -227,14 +227,17 @@ int mobility(position_t *p, color_t color) {
            "ptype: %d\n", ptype_of(np.board[sq]));
   
   square_t king_sq = p->kloc[color];
-  if (sq == king_sq) {
-    mobility--;
-  }  
-  for (int d = 0; d < 8; ++d) {
-    square_t new_sq = king_sq + dir_of(d);
-    if (sq == new_sq) {
+
+  int right = fil_of(king_sq)+1;
+  int left = fil_of(king_sq)-1;
+  int top = rnk_of(king_sq)+1;
+  int bottom = rnk_of(king_sq)-1;
+
+  int sq_rank = rnk_of(sq);
+  int sq_file = fil_of(sq);
+
+  if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top)) {
       mobility--;
-    }
   }
   for (int d = 0; d < 8; ++d) {
     square_t new_sq = king_sq + dir_of(d);
@@ -247,17 +250,14 @@ int mobility(position_t *p, color_t color) {
 
   while (true) { 
     sq += beam;
+    sq_file = fil_of(sq);
+    sq_rank = rnk_of(sq);
+  
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
-    if (sq == king_sq && ptype_of(p->board[sq]) != INVALID) {
+
+    if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top) && ptype_of(p->board[sq]) != INVALID) {
       mobility--;
     }  
-    for (int d = 0; d < 8; ++d) {
-      square_t new_sq = king_sq + dir_of(d);
-      if (sq == new_sq && ptype_of(p->board[sq]) != INVALID) {
-        mobility--;
-      }
-    }
-
 
     switch (ptype_of(p->board[sq])) {
       case EMPTY:  // empty square
