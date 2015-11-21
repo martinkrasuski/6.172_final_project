@@ -259,36 +259,49 @@ float h_dist(square_t a, square_t b) {
 
 // H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
 int h_squares_attackable(position_t *p, color_t c) {
-  char laser_map[ARR_SIZE];
-
-  for (int i = 0; i < ARR_SIZE; ++i) {
-    laser_map[i] = 4;   // Invalid square
-  }
-
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
-    }
-  }
-
-  mark_laser_path(p, laser_map, c, 1);  // 1 = path of laser with no moves
-
-  square_t o_king_sq = p->kloc[opp_color(c)];
-  tbassert(ptype_of(p->board[o_king_sq]) == KING,
-           "ptype: %d\n", ptype_of(p->board[o_king_sq]));
-  tbassert(color_of(p->board[o_king_sq]) != c,
-           "color: %d\n", color_of(p->board[o_king_sq]));
-
+  position_t np = *p;
+  
+  // h_attackable adds the harmonic distance from a marked laser square to the enemy square
+  // closer the laser is to enemy king, higher the value is
   float h_attackable = 0;
-  for (fil_t f = 0; f < BOARD_WIDTH; f++) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
-      square_t sq = square_of(f, r);
-      if (laser_map[sq] != 0) {
+  square_t o_king_sq = p->kloc[opp_color(c)];
+ 
+  // Fire laser, recording in laser_map
+  square_t sq = np.kloc[c];
+  int bdir = ori_of(np.board[sq]);
+
+  tbassert(ptype_of(np.board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np.board[sq]));
+
+  h_attackable += h_dist(sq, o_king_sq);
+
+  while (true) {
+    sq += beam_of(bdir);
+    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+
+    switch (ptype_of(p->board[sq])) {
+      case EMPTY:  // empty square
         h_attackable += h_dist(sq, o_king_sq);
-      }
+        break;
+      case PAWN:  // Pawn
+        h_attackable += h_dist(sq, o_king_sq); 
+        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        if (bdir < 0) {  // Hit back of Pawn
+          return h_attackable;
+        }
+        break;
+      case KING:  // King
+        h_attackable += h_dist(sq, o_king_sq);
+        return h_attackable;  // sorry, game over my friend!
+        break;
+      case INVALID:  // Ran off edge of board
+        return h_attackable;
+        break;
+      default:  // Shouldna happen, man!
+        tbassert(false, "Not cool, man.  Not cool.\n");
+        break;
     }
   }
-  return h_attackable;
 }
 
 // Static evaluation.  Returns score
