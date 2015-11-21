@@ -136,9 +136,10 @@ void mark_laser_path(position_t *p, char *laser_map, color_t c,
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
   laser_map[sq] |= mark_mask;
+  int beam = beam_of(bdir);
 
-  while (true) {
-    sq += beam_of(bdir);
+  while (true) { 
+    sq += beam;
     laser_map[sq] |= mark_mask;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
@@ -150,6 +151,7 @@ void mark_laser_path(position_t *p, char *laser_map, color_t c,
         if (bdir < 0) {  // Hit back of Pawn
           return;
         }
+        beam = beam_of(bdir);
         break;
       case KING:  // King
         return;  // sorry, game over my friend!
@@ -179,8 +181,9 @@ int pawnpin(position_t *p, color_t color) {
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
   int pinned_pawns = 0;
+  int beam = beam_of(bdir);
   while (true) {
-    sq += beam_of(bdir);
+    sq += beam;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
     switch (ptype_of(p->board[sq])) {
@@ -194,6 +197,7 @@ int pawnpin(position_t *p, color_t color) {
         if (bdir < 0) {  // Hit back of Pawn
           return pinned_pawns;
         }
+        beam = beam_of(bdir);
         break;
       case KING:  // King
         return pinned_pawns;  // sorry, game over my friend!
@@ -274,9 +278,10 @@ int h_squares_attackable(position_t *p, color_t c) {
            "ptype: %d\n", ptype_of(np.board[sq]));
 
   h_attackable += h_dist(sq, o_king_sq);
+  int beam = beam_of(bdir);
 
   while (true) {
-    sq += beam_of(bdir);
+    sq += beam;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
     switch (ptype_of(p->board[sq])) {
@@ -289,6 +294,7 @@ int h_squares_attackable(position_t *p, color_t c) {
         if (bdir < 0) {  // Hit back of Pawn
           return h_attackable;
         }
+        beam = beam_of(bdir);
         break;
       case KING:  // King
         h_attackable += h_dist(sq, o_king_sq);
