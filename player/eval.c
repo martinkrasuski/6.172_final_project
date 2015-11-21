@@ -214,6 +214,7 @@ int pawnpin(position_t *p, color_t color) {
   return pinned_pawns;
 }
 
+// MOBILITY heuristic: safe squares around king of color color.
 int mobility(position_t *p, color_t color) {
   color_t c = opp_color(color);
   position_t np = *p;
@@ -227,18 +228,22 @@ int mobility(position_t *p, color_t color) {
            "ptype: %d\n", ptype_of(np.board[sq]));
   
   square_t king_sq = p->kloc[color];
-
+  
+  // Create a bounding box around king's square
   int right = fil_of(king_sq)+1;
   int left = fil_of(king_sq)-1;
   int top = rnk_of(king_sq)+1;
   int bottom = rnk_of(king_sq)-1;
-
+  
+  // Column & Row of laser Square
   int sq_rank = rnk_of(sq);
   int sq_file = fil_of(sq);
 
   if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top)) {
       mobility--;
   }
+  
+  // Mark any invalid squares surrounding the king as not mobile
   for (int d = 0; d < 8; ++d) {
     square_t new_sq = king_sq + dir_of(d);
     if (ptype_of(p->board[new_sq]) == INVALID) {
@@ -282,44 +287,6 @@ int mobility(position_t *p, color_t color) {
   }
 
 }
-
-/*
-// MOBILITY heuristic: safe squares around king of color color.
-int mobility(position_t *p, color_t color) {
-  color_t c = opp_color(color);
-  char laser_map[ARR_SIZE];
-
-  for (int i = 0; i < ARR_SIZE; ++i) {
-    laser_map[i] = 4;   // Invalid square
-  }
-
-  for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      laser_map[square_of(f, r)] = 0;
-    }
-  }
-
-  mark_laser_path(p, laser_map, c, 1);  // find path of laser given that you aren't moving
-
-  int mobility = 0;
-  square_t king_sq = p->kloc[color];
-  tbassert(ptype_of(p->board[king_sq]) == KING,
-           "ptype: %d\n", ptype_of(p->board[king_sq]));
-  tbassert(color_of(p->board[king_sq]) == color,
-           "color: %d\n", color_of(p->board[king_sq]));
-
-  if (laser_map[king_sq] == 0) {
-    mobility++;
-  }
-  for (int d = 0; d < 8; ++d) {
-    square_t sq = king_sq + dir_of(d);
-    if (laser_map[sq] == 0) {
-      mobility++;
-    }
-  }
-  return mobility;
-}
-*/
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
 float h_dist(square_t a, square_t b) {
