@@ -446,7 +446,21 @@ square_t low_level_make_move(position_t *old, position_t *p, move_t mv) {
     if (ptype_of(to_piece) == KING) {
       p->kloc[color_of(to_piece)] = from_sq;
     }
-
+    // Update pawn locations if necessary
+    if (ptype_of(from_piece) == PAWN) {
+      for(int i = 0; i < NUMBER_PAWNS; i++) {
+        if(p->plocs[color_of(from_piece)][i] == from_sq) {
+          p->plocs[color_of(from_piece)][i] = to_sq;
+        }
+      }
+    }
+    if (ptype_of(to_piece) == PAWN) {
+      for(int i = 0; i < NUMBER_PAWNS; i++) {
+        if(p->plocs[color_of(to_piece)][i] == to_sq) {
+          p->plocs[color_of(to_piece)][i] = from_sq;
+        }
+      }
+    }
   } else {  // rotation
     // remove from_piece from from_sq in hash
     p->key ^= zob[from_sq][from_piece];
@@ -466,7 +480,7 @@ square_t low_level_make_move(position_t *old, position_t *p, move_t mv) {
       fprintf(stderr, "After:\n");
       display(p);
     });
-
+  //assert_pawn_locs(p);
   return stomped_dst_sq;
 }
 
@@ -480,9 +494,10 @@ square_t fire(position_t *p) {
   tbassert(ptype_of(p->board[ p->kloc[fake_color_to_move] ]) == KING,
            "ptype_of(p->board[ p->kloc[fake_color_to_move] ]): %d\n",
            ptype_of(p->board[ p->kloc[fake_color_to_move] ]));
-
+  
+  int beam = beam_of(bdir);
   while (true) {
-    sq += beam_of(bdir);
+    sq += beam;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
     switch (ptype_of(p->board[sq])) {
@@ -493,6 +508,7 @@ square_t fire(position_t *p) {
         if (bdir < 0) {  // Hit back of Pawn
           return sq;
         }
+        beam = beam_of(bdir);
         break;
       case KING:  // King
         return sq;  // sorry, game over my friend!
@@ -531,9 +547,14 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
 
   } else {  // we definitely stomped something
     p->victims.stomped = p->board[stomped_sq];
-
+    color_t stomped_color = color_of(p->board[stomped_sq]);
     p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
     p->board[stomped_sq] = 0;
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      if(p->plocs[stomped_color][i] == stomped_sq) {
+        p->plocs[stomped_color][i] = 0;
+      }
+    }
     p->key ^= zob[stomped_sq][p->board[stomped_sq]];
 
     tbassert(p->key == compute_zob_key(p),
@@ -565,11 +586,16 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
       return KO();
     }
   } else {  // we definitely hit something with laser
+    color_t zapped_color = color_of(p->board[victim_sq]);
     p->victims.zapped = p->board[victim_sq];
     p->key ^= zob[victim_sq][p->victims.zapped];   // remove from board
     p->board[victim_sq] = 0;
     p->key ^= zob[victim_sq][0];
-
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      if(p->plocs[zapped_color][i] == victim_sq) { 
+        p->plocs[zapped_color][i] = 0;
+      }
+    }
     tbassert(p->key == compute_zob_key(p),
              "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
              p->key, compute_zob_key(p));
@@ -579,7 +605,7 @@ victims_t make_move(position_t *old, position_t *p, move_t mv) {
         DEBUG_LOG(1, "Zapped piece on %s\n", buf);
       });
   }
-
+  //assert_pawn_locs(p);
   return p->victims;
 }
 
@@ -733,4 +759,31 @@ bool zero_victims(victims_t victims) {
 bool victim_exists(victims_t victims) {
   return (victims.stomped > 0) ||
       (victims.zapped > 0);
+}
+
+void assert_pawn_locs(position_t * p) {
+  /*  for(int c = 0; c < 2; c++) {
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      square_t sq = p->plocs[c][i];
+      printf("pawn color %d square %d fil %d rnk %d\n", c, sq, fil_of(sq), rnk_of(sq));
+    }
+    }*/
+  for (fil_t f = 0; f < BOARD_WIDTH; f++) {
+    for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
+      square_t sq = square_of(f,r);
+      piece_t x = p->board[sq];
+
+      ptype_t typ = ptype_of(x);
+      color_t color = color_of(x);
+      if(typ == PAWN) {
+        bool pawn_in_pawnlocs = false;
+        for(int i = 0; i < NUMBER_PAWNS; i++) {
+          if(p->plocs[color][i] == sq) {
+            pawn_in_pawnlocs = true;
+          }
+        }
+        tbassert(pawn_in_pawnlocs, "square %d fil %d rnk %d\n", sq, fil_of(sq), rnk_of(sq));
+      }
+    }
+  }
 }
