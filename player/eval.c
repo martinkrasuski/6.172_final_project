@@ -278,6 +278,52 @@ float h_dist(square_t a, square_t b) {
 
 // H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
 int h_squares_attackable(position_t *p, color_t c) {
+  position_t np = *p;
+
+  float h_attackable = 0;
+  square_t o_king_sq = p->kloc[opp_color(c)];
+ 
+  // Fire laser, recording in laser_map
+  square_t sq = np.kloc[c];
+  int bdir = ori_of(np.board[sq]);
+
+  tbassert(ptype_of(np.board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np.board[sq]));
+
+  h_attackable += h_dist(sq, o_king_sq);
+
+  while (true) {
+    sq += beam_of(bdir);
+    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+
+    switch (ptype_of(p->board[sq])) {
+      case EMPTY:  // empty square
+        h_attackable += h_dist(sq, o_king_sq);
+        break;
+      case PAWN:  // Pawn
+        h_attackable += h_dist(sq, o_king_sq); 
+        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        if (bdir < 0) {  // Hit back of Pawn
+          return h_attackable;
+        }
+        break;
+      case KING:  // King
+        h_attackable += h_dist(sq, o_king_sq);
+        return h_attackable;  // sorry, game over my friend!
+        break;
+      case INVALID:  // Ran off edge of board
+        return h_attackable;
+        break;
+      default:  // Shouldna happen, man!
+        tbassert(false, "Not cool, man.  Not cool.\n");
+        break;
+    }
+  }
+}
+/*
+// H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
+int h_squares_attackable(position_t *p, color_t c) {
+
   char laser_map[ARR_SIZE];
 
   for (int i = 0; i < ARR_SIZE; ++i) {
@@ -309,7 +355,7 @@ int h_squares_attackable(position_t *p, color_t c) {
   }
   return h_attackable;
 }
-
+*/
 // Static evaluation.  Returns score
 score_t eval(position_t *p, bool verbose) {
   // seed rand_r with a value of 1, as per
