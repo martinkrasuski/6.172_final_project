@@ -494,9 +494,10 @@ square_t fire(position_t *p) {
   tbassert(ptype_of(p->board[ p->kloc[fake_color_to_move] ]) == KING,
            "ptype_of(p->board[ p->kloc[fake_color_to_move] ]): %d\n",
            ptype_of(p->board[ p->kloc[fake_color_to_move] ]));
-
+  
+  int beam = beam_of(bdir);
   while (true) {
-    sq += beam_of(bdir);
+    sq += beam;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
 
     switch (ptype_of(p->board[sq])) {
@@ -507,6 +508,7 @@ square_t fire(position_t *p) {
         if (bdir < 0) {  // Hit back of Pawn
           return sq;
         }
+        beam = beam_of(bdir);
         break;
       case KING:  // King
         return sq;  // sorry, game over my friend!
