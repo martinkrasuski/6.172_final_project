@@ -24,6 +24,12 @@ int KAGGRESSIVE;
 int MOBILITY;
 int PAWNPIN;
 
+typedef struct heuristics_t {
+  int pawnpin;
+  int h_attackable;
+  int mobility;
+} heuristics_t;
+
 // Heuristics for static evaluation - described in the google doc
 // mentioned in the handout.
 
@@ -167,9 +173,61 @@ void mark_laser_path(position_t *p, char *laser_map, color_t c,
   }
 }
 
+// Marks the path of the laser until it hits a piece or goes off the board.
+//
+// p : current board state
+// laser_map : end result will be stored here. Every square on the
+//             path of the laser is marked with mark_mask
+// c : color of king shooting laser
+// mark_mask: what each square is marked with
+void mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t * heuristics) {
+  position_t np = *p;
+
+  // Fire laser, recording in laser_map
+  square_t sq = np.kloc[c];
+  int bdir = ori_of(np.board[sq]);
+
+  tbassert(ptype_of(np.board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np.board[sq]));
+  laser_map[sq] |= mark_mask;
+  int beam = beam_of(bdir);
+
+  while (true) { 
+    sq += beam;
+    laser_map[sq] |= mark_mask;
+    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+
+    switch (ptype_of(p->board[sq])) {
+      case EMPTY:  // empty square
+        heuristics->h_attackable += h_dist(sq, o_king_sq);
+        break;
+      case PAWN:  // Pawn
+        heuristics->h_attackable += h_dist(sq, o_king_sq);
+        if (color_of(p->board[sq]) != c) {
+          heuristics->pawnpin++;
+        }
+        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        if (bdir < 0) {  // Hit back of Pawn
+          return heuristics;
+        }
+        beam = beam_of(bdir);
+        break;
+      case KING:  // King
+        heuristics->h_attackable += h_dist(sq, o_king_sq);
+        return heuristics;  // sorry, game over my friend!
+        break;
+      case INVALID:  // Ran off edge of board
+        return heuristics;
+        break;
+      default:  // Shouldna happen, man!
+        tbassert(false, "Not cool, man.  Not cool.\n");
+        break;
+    }
+  }
+}
+
 // PAWNPIN Heuristic: count number of pawns that are pinned by the
 //   opposing king's laser --- and are thus immobile.
-
 int pawnpin(position_t *p, color_t color) {
   color_t c = opp_color(color);
   //int pinned_pawns = mark_laser_path_pinned(p, c);  // find path of laser given that you aren't moving
