@@ -174,9 +174,6 @@ int mark_laser_path_pinned(position_t *p, color_t c) {
   tbassert(ptype_of(np.board[sq]) == KING,
            "ptype: %d\n", ptype_of(np.board[sq]));
   int pinned_pawns = 0;
-  if(color_of(p->board[sq]) != c && ptype_of(p->board[sq]) == PAWN){
-    pinned_pawns++;
-  }
   while (true) {
     sq += beam_of(bdir);
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
@@ -185,12 +182,12 @@ int mark_laser_path_pinned(position_t *p, color_t c) {
       case EMPTY:  // empty square
         break;
       case PAWN:  // Pawn
+        if (color_of(p->board[sq]) != c) {
+          pinned_pawns++;
+        }
         bdir = reflect_of(bdir, ori_of(p->board[sq]));
         if (bdir < 0) {  // Hit back of Pawn
           return pinned_pawns;
-        }
-        if (color_of(p->board[sq]) != c) {
-          pinned_pawns++;
         }
         break;
       case KING:  // King
