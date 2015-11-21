@@ -107,6 +107,7 @@ ev_score_t kaggressive(position_t *p, fil_t f, rnk_t r) {
 
   if (delta_fil >= 0 && delta_rnk >= 0) {
     bonus = (f + 1) * (r + 1);
+
   } else if (delta_fil <= 0 && delta_rnk >= 0) {
     bonus = (BOARD_WIDTH - f) * (r + 1);
   } else if (delta_fil <= 0 && delta_rnk <= 0) {
@@ -213,6 +214,76 @@ int pawnpin(position_t *p, color_t color) {
   return pinned_pawns;
 }
 
+int mobility(position_t *p, color_t color) {
+  color_t c = opp_color(color);
+  position_t np = *p;
+  int mobility = 9;
+
+  // Fire laser, recording in laser_map
+  square_t sq = np.kloc[c];
+  int bdir = ori_of(np.board[sq]);
+
+  tbassert(ptype_of(np.board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np.board[sq]));
+  
+  square_t king_sq = p->kloc[color];
+  if (sq == king_sq) {
+    mobility--;
+  }  
+  for (int d = 0; d < 8; ++d) {
+    square_t new_sq = king_sq + dir_of(d);
+    if (sq == new_sq) {
+      mobility--;
+    }
+  }
+  for (int d = 0; d < 8; ++d) {
+    square_t new_sq = king_sq + dir_of(d);
+    if (ptype_of(p->board[new_sq]) == INVALID) {
+      mobility--;
+    }
+  }
+
+  int beam = beam_of(bdir);
+
+  while (true) { 
+    sq += beam;
+    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
+    if (sq == king_sq && ptype_of(p->board[sq]) != INVALID) {
+      mobility--;
+    }  
+    for (int d = 0; d < 8; ++d) {
+      square_t new_sq = king_sq + dir_of(d);
+      if (sq == new_sq && ptype_of(p->board[sq]) != INVALID) {
+        mobility--;
+      }
+    }
+
+
+    switch (ptype_of(p->board[sq])) {
+      case EMPTY:  // empty square
+        break;
+      case PAWN:  // Pawn
+        bdir = reflect_of(bdir, ori_of(p->board[sq]));
+        if (bdir < 0) {  // Hit back of Pawn
+          return mobility;
+        }
+        beam = beam_of(bdir);
+        break;
+      case KING:  // King
+        return mobility;  // sorry, game over my friend!
+        break;
+      case INVALID:  // Ran off edge of board
+        return mobility;
+        break;
+      default:  // Shouldna happen, man!
+        tbassert(false, "Not cool, man.  Not cool.\n");
+        break;
+    }
+  }
+
+}
+
+/*
 // MOBILITY heuristic: safe squares around king of color color.
 int mobility(position_t *p, color_t color) {
   color_t c = opp_color(color);
@@ -248,7 +319,7 @@ int mobility(position_t *p, color_t color) {
   }
   return mobility;
 }
-
+*/
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
 float h_dist(square_t a, square_t b) {
