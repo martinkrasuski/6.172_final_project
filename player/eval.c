@@ -10,7 +10,7 @@
 // -----------------------------------------------------------------------------
 // Evaluation
 // -----------------------------------------------------------------------------
-int mark_laser_path_pinned(position_t *p, color_t c);
+
 typedef int32_t ev_score_t;  // Static evaluator uses "hi res" values
 
 int RANDOMIZE;
@@ -164,7 +164,12 @@ void mark_laser_path(position_t *p, char *laser_map, color_t c,
   }
 }
 
-int mark_laser_path_pinned(position_t *p, color_t c) {
+// PAWNPIN Heuristic: count number of pawns that are pinned by the
+//   opposing king's laser --- and are thus immobile.
+
+int pawnpin(position_t *p, color_t color) {
+  color_t c = opp_color(color);
+  //int pinned_pawns = mark_laser_path_pinned(p, c);  // find path of laser given that you aren't moving
   position_t np = *p;
 
   // Fire laser, recording in laser_map
@@ -201,30 +206,6 @@ int mark_laser_path_pinned(position_t *p, color_t c) {
         break;
     }
   }
-}
-
-// PAWNPIN Heuristic: count number of pawns that are pinned by the
-//   opposing king's laser --- and are thus immobile.
-
-int pawnpin(position_t *p, color_t color) {
-  color_t c = opp_color(color);
-  int pinned_pawns = mark_laser_path_pinned(p, c);  // find path of laser given that you aren't moving
-
-
-
-  //int pinned_pawns = 0;
-
-  // Figure out which pawns are not pinned down by the laser.
-  /*for (fil_t f = 0; f < BOARD_WIDTH; ++f) {
-    for (rnk_t r = 0; r < BOARD_WIDTH; ++r) {
-      if (laser_map[square_of(f, r)] == 0 &&
-          color_of(p->board[square_of(f, r)]) == color &&
-          ptype_of(p->board[square_of(f, r)]) == PAWN) {
-        pinned_pawns += 1;
-      }
-    }
-    }*/
-
   return pinned_pawns;
 }
 
