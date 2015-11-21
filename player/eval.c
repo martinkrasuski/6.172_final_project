@@ -322,7 +322,7 @@ score_t eval(position_t *p, bool verbose) {
   char buf[MAX_CHARS_IN_MOVE];
   int white_pawns = 0;
   int black_pawns = 0;
-  for (fil_t f = 0; f < BOARD_WIDTH; f++) {
+  /*for (fil_t f = 0; f < BOARD_WIDTH; f++) {
     for (rnk_t r = 0; r < BOARD_WIDTH; r++) {
       square_t sq = square_of(f, r);
       piece_t x = p->board[sq];
@@ -383,6 +383,36 @@ score_t eval(position_t *p, bool verbose) {
         default:
           tbassert(false, "Jose says: no way!\n");   // No way, Jose!
       }
+    }
+    }*/
+  for(int c = 0; c < 2; c++) {
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      square_t sq = p->plocs[c][i];
+      if(color == WHITE) {
+         white_pawns++;
+      } else {
+         black_pawns++;
+      }
+      // MATERIAL heuristic: Bonus for each Pawn
+      bonus = PAWN_EV_VALUE;
+      if (verbose) {
+         printf("MATERIAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
+      }
+      score[c] += bonus;
+
+      // PBETWEEN heuristic
+      bonus = pbetween(p, f, r);
+      if (verbose) {
+        printf("PBETWEEN bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
+      }
+      score[c] += bonus;
+
+      // PCENTRAL heuristic
+      bonus = pcentral(f, r);
+      if (verbose) {
+         printf("PCENTRAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
+      }
+      score[c] += bonus;
     }
   }
 
