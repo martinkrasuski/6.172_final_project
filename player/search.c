@@ -68,7 +68,7 @@ static score_t searchPV(searchNode *node, int depth,
                         uint64_t *node_count_serial);
 static score_t scout_search(searchNode *node, int depth,
                             uint64_t *node_count_serial);
-
+void assert_sorted(sortable_move_t * move_list,int num_of_moves);
 // Include common search functions
 #include "./search_globals.c"
 #include "./search_common.c"
@@ -147,6 +147,7 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     // Incrementally sort the move list.
     sort_incremental(move_list, num_of_moves, mv_index);
 
+    tbassert(false, "stopped\n");
     move_t mv = get_move(move_list[mv_index]);
 
     num_moves_tried++;
@@ -347,4 +348,13 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   }
 
   return rootNode.best_score;
+}
+
+
+void assert_sorted(sortable_move_t * move_list, int num_of_moves) {
+  for(int i = 0; i < num_of_moves; i++){
+    if(i!=0) {
+      tbassert(move_list[i] < move_list[i-1], "not sorted\n");
+    }
+  }
 }
