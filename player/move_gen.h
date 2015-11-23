@@ -22,9 +22,9 @@
 // board is 8 x 8 or 10 x 10
 #define BOARD_WIDTH 10
 
-typedef int square_t;
-typedef int rnk_t;
-typedef int fil_t;
+typedef uint8_t square_t;
+typedef uint8_t rnk_t;
+typedef uint8_t fil_t;
 
 #define FIL_ORIGIN ((ARR_WIDTH - BOARD_WIDTH) / 2)
 #define RNK_ORIGIN ((ARR_WIDTH - BOARD_WIDTH) / 2)
@@ -40,7 +40,7 @@ typedef int fil_t;
 
 #define PIECE_SIZE 5  // Number of bits in (ptype, color, orientation)
 
-typedef int piece_t;
+typedef uint8_t piece_t;
 
 // -----------------------------------------------------------------------------
 // piece types
@@ -123,12 +123,19 @@ typedef struct victims_t {
   piece_t zapped;
 } victims_t;
 
-// returned by make move in illegal situation
-#define KO_STOMPED -1
-#define KO_ZAPPED -1
+// The maximum value a one byte (8 bit) unsigned integer can be
+#define MAX_UINT8_T 255
+
+// Set these values to 255 to represent illegal moves. 
+// Because our Board width is 16x16 we will only ever need 216 values. 
+// Therefore we know we can use the value 255 to represent KO/Illegal situation
+
 // returned by make move in ko situation
-#define ILLEGAL_STOMPED -1
-#define ILLEGAL_ZAPPED -1
+#define KO_STOMPED MAX_UINT8_T
+#define KO_ZAPPED MAX_UINT8_T
+// returned by make move in illegal situation
+#define ILLEGAL_STOMPED MAX_UINT8_T
+#define ILLEGAL_ZAPPED MAX_UINT8_T
 
 // -----------------------------------------------------------------------------
 // position
@@ -138,7 +145,7 @@ typedef struct position {
   piece_t      board[ARR_SIZE];
   struct position  *history;     // history of position
   uint64_t     key;              // hash key
-  int          ply;              // Even ply are White, odd are Black
+  int16_t      ply;              // Even ply are White, odd are Black
   move_t       last_move;        // move that led to this position
   victims_t    victims;          // pieces destroyed by shooter or stomper
   square_t     kloc[2];          // location of kings
