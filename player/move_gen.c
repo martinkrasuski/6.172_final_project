@@ -713,13 +713,8 @@ static uint64_t perft_search(position_t *p, const int depth, const int ply) {
   if (depth == 0) {
     return 1;
   }
-<<<<<<< HEAD
 
   const int num_moves = generate_all(p, lst, true);
-=======
-  printf("perft calling generate_all\n");
-  num_moves = generate_all(p, lst, true);
->>>>>>> new_generate
 
   if (depth == 1) {
     return num_moves;
