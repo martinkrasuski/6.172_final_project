@@ -18,7 +18,7 @@
 #define MAX(x, y)  ((x) > (y) ? (x) : (y))
 #define MIN(x, y)  ((x) < (y) ? (x) : (y))
 
-int USE_KO;  // Respect the Ko rule
+int8_t USE_KO;  // Respect the Ko rule
 
 static char *color_strs[2] = {"White", "Black"};
 
@@ -32,7 +32,7 @@ int old_generate_all(position_t *p, sortable_move_t *sortable_move_list,
 // -----------------------------------------------------------------------------
 
 // which color is moving next
-inline color_t color_to_move_of(const position_t *p) {
+color_t color_to_move_of(const position_t *p) {
   if ((p->ply & 1) == 0) {
     return WHITE;
   } else {
@@ -44,7 +44,7 @@ inline color_t color_of(const piece_t x) {
   return (color_t) ((x >> COLOR_SHIFT) & COLOR_MASK);
 }
 
-inline color_t opp_color(const color_t c) {
+color_t opp_color(const color_t c) {
   if (c == WHITE) {
     return BLACK;
   } else {
@@ -53,27 +53,27 @@ inline color_t opp_color(const color_t c) {
 }
 
 
-inline void set_color(piece_t *x, const color_t c) {
+void set_color(piece_t *x, const color_t c) {
   tbassert((c >= 0) & (c <= COLOR_MASK), "color: %d\n", c);
   *x = ((c & COLOR_MASK) << COLOR_SHIFT) |
       (*x & ~(COLOR_MASK << COLOR_SHIFT));
 }
 
 
-inline ptype_t ptype_of(const piece_t x) {
+ptype_t ptype_of(const piece_t x) {
   return (ptype_t) ((x >> PTYPE_SHIFT) & PTYPE_MASK);
 }
 
-inline void set_ptype(piece_t *x, ptype_t pt) {
+void set_ptype(piece_t *x, ptype_t pt) {
   *x = ((pt & PTYPE_MASK) << PTYPE_SHIFT) |
       (*x & ~(PTYPE_MASK << PTYPE_SHIFT));
 }
 
-inline int ori_of(const piece_t x) {
+int8_t ori_of(const piece_t x) {
   return (x >> ORI_SHIFT) & ORI_MASK;
 }
 
-inline void set_ori(piece_t *x, const int ori) {
+void set_ori(piece_t *x, const int ori) {
   *x = ((ori & ORI_MASK) << ORI_SHIFT) |
       (*x & ~(ORI_MASK << ORI_SHIFT));
 }
@@ -157,25 +157,25 @@ inline int square_to_str(const square_t sq, char *buf, const size_t bufsize) {
 }
 
 // direction map
-static const int16_t dir[8] = { -ARR_WIDTH - 1, -ARR_WIDTH, -ARR_WIDTH + 1, -1, 1,
+static const int8_t dir[8] = { -ARR_WIDTH - 1, -ARR_WIDTH, -ARR_WIDTH + 1, -1, 1,
                       ARR_WIDTH - 1, ARR_WIDTH, ARR_WIDTH + 1 };
-inline int16_t dir_of(const int i) {
+inline int8_t dir_of(const int i) {
   tbassert(i >= 0 && i < 8, "i: %d\n", i);
   return dir[i];
 }
 
 
 // directions for laser: NN, EE, SS, WW
-static const int16_t beam[NUM_ORI] = {1, ARR_WIDTH, -1, -ARR_WIDTH};
+static const int8_t beam[NUM_ORI] = {1, ARR_WIDTH, -1, -ARR_WIDTH};
 
-inline int16_t beam_of(const int direction) {
+inline int8_t beam_of(const int direction) {
   tbassert(direction >= 0 && direction < NUM_ORI, "dir: %d\n", direction);
   return beam[direction];
 }
 
 // reflect[beam_dir][pawn_orientation]
 // -1 indicates back of Pawn
-const int reflect[NUM_ORI][NUM_ORI] = {
+const int8_t reflect[NUM_ORI][NUM_ORI] = {
   //  NW  NE  SE  SW
   { -1, -1, EE, WW},   // NN
   { NN, -1, -1, SS},   // EE
@@ -183,7 +183,7 @@ const int reflect[NUM_ORI][NUM_ORI] = {
   { -1, NN, SS, -1 }   // WW
 };
 
-inline int reflect_of(const int beam_dir, const int pawn_ori) {
+inline int8_t reflect_of(const int beam_dir, const int pawn_ori) {
   tbassert(beam_dir >= 0 && beam_dir < NUM_ORI, "beam-dir: %d\n", beam_dir);
   tbassert(pawn_ori >= 0 && pawn_ori < NUM_ORI, "pawn-ori: %d\n", pawn_ori);
   return reflect[beam_dir][pawn_ori];
@@ -482,7 +482,7 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
       }
     });
 
-  *p = *old;
+  *p = *old; // needs to copy key
 
   p->history = old;
   p->last_move = mv;
@@ -580,13 +580,13 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
 square_t fire(position_t *p) {
   const color_t fake_color_to_move = (color_to_move_of(p) == WHITE) ? BLACK : WHITE;
   square_t sq = p->kloc[fake_color_to_move];
-  int bdir = ori_of(p->board[sq]);
+  int8_t bdir = ori_of(p->board[sq]);
 
   tbassert(ptype_of(p->board[ p->kloc[fake_color_to_move] ]) == KING,
            "ptype_of(p->board[ p->kloc[fake_color_to_move] ]): %d\n",
            ptype_of(p->board[ p->kloc[fake_color_to_move] ]));
   
-  int beam = beam_of(bdir);
+  int8_t beam = beam_of(bdir);
   while (true) {
     sq += beam;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);

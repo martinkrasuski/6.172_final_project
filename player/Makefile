@@ -40,7 +40,6 @@ LDFLAGS= -Wall -lrt -lm -lcilkrts -ldl -lpthread
 
 .PHONY : default clean
 
-
 default : $(TARGET)
 
 # Each C source file will have a corresponding file of prerequisites.
@@ -73,3 +72,4 @@ endif
 
 clean :
 	rm -f *.o *.d* *~ $(TARGET)
+

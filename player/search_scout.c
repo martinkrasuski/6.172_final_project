@@ -33,7 +33,7 @@ bool parallel_node_aborted(searchNode* node) {
 // Initialize a scout search node for a "Null Window" search.
 //   https://chessprogramming.wikispaces.com/Scout
 //   https://chessprogramming.wikispaces.com/Null+Window
-static void initialize_scout_node(searchNode *node, int depth) {
+static void initialize_scout_node(searchNode *node, const int depth) {
   node->type = SEARCH_SCOUT;
   node->beta = -(node->parent->alpha);
   node->alpha = node->beta - 1;
@@ -48,7 +48,7 @@ static void initialize_scout_node(searchNode *node, int depth) {
   node->abort = false;
 }
 
-static score_t scout_search(searchNode *node, int depth,
+static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
   // Initialize the search node.
   initialize_scout_node(node, depth);
@@ -68,20 +68,20 @@ static score_t scout_search(searchNode *node, int depth,
 
   // Populate some of the fields of this search node, using some
   //  of the information provided by the pre-evaluation.
-  int hash_table_move = pre_evaluation_result.hash_table_move;
+  const int hash_table_move = pre_evaluation_result.hash_table_move;
   node->best_score = pre_evaluation_result.score;
   node->quiescence = pre_evaluation_result.should_enter_quiescence;
 
   // Grab the killer-moves for later use.
-  move_t killer_a = killer[KMT(node->ply, 0)];
-  move_t killer_b = killer[KMT(node->ply, 1)];
+  const move_t killer_a = killer[KMT(node->ply, 0)];
+  const move_t killer_b = killer[KMT(node->ply, 1)];
 
   // Store the sorted move list on the stack.
   //   MAX_NUM_MOVES is all that we need.
   sortable_move_t move_list[MAX_NUM_MOVES];
 
   // Obtain the sorted move list.
-  int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
+  const int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
 
   int number_of_moves_evaluated = 0;
 
