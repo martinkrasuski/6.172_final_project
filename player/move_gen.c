@@ -157,18 +157,18 @@ inline int square_to_str(const square_t sq, char *buf, const size_t bufsize) {
 }
 
 // direction map
-static const int dir[8] = { -ARR_WIDTH - 1, -ARR_WIDTH, -ARR_WIDTH + 1, -1, 1,
+static const int16_t dir[8] = { -ARR_WIDTH - 1, -ARR_WIDTH, -ARR_WIDTH + 1, -1, 1,
                       ARR_WIDTH - 1, ARR_WIDTH, ARR_WIDTH + 1 };
-inline int dir_of(const int i) {
+inline int16_t dir_of(const int i) {
   tbassert(i >= 0 && i < 8, "i: %d\n", i);
   return dir[i];
 }
 
 
 // directions for laser: NN, EE, SS, WW
-static const int beam[NUM_ORI] = {1, ARR_WIDTH, -1, -ARR_WIDTH};
+static const int16_t beam[NUM_ORI] = {1, ARR_WIDTH, -1, -ARR_WIDTH};
 
-inline int beam_of(const int direction) {
+inline int16_t beam_of(const int direction) {
   tbassert(direction >= 0 && direction < NUM_ORI, "dir: %d\n", direction);
   return beam[direction];
 }
