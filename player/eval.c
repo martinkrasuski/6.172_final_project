@@ -14,9 +14,9 @@
 
 typedef int32_t ev_score_t;  // Static evaluator uses "hi res" values
 
-int RANDOMIZE;
+uint8_t RANDOMIZE;
 
-int PCENTRAL;
+//uint8_t PCENTRAL;
 int HATTACK;
 int PBETWEEN;
 int PCENTRAL;
@@ -44,6 +44,10 @@ ev_score_t pcentral(fil_t f, rnk_t r) {
   double dr = BOARD_WIDTH/2 - r - 1;
   if (dr < 0) dr = r - BOARD_WIDTH/2;
   double bonus = 1 - sqrt(df * df + dr * dr) / (BOARD_WIDTH / sqrt(2));
+//  printf("f = %d, r = %d bonus = %lf\n ", f, r, bonus_old);
+//  double bonus = pcentral_table[f][r];  
+  //tbassert(bonus == bonus_old, "bonus = %lf, bonus_old = %lf, diff = %lf", bonus, bonus_old, bonus - bonus_old); 
+  
   return PCENTRAL * bonus;
 }
 
@@ -282,7 +286,7 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t
 }
 
 // Static evaluation.  Returns score
-score_t eval(position_t *p, bool verbose) {
+score_t eval(position_t *p, const bool verbose) {
   // seed rand_r with a value of 1, as per
   // http://linux.die.net/man/3/rand_r
   static __thread unsigned int seed = 1;
@@ -291,11 +295,11 @@ score_t eval(position_t *p, bool verbose) {
   //  int corner[2][2] = { {INF, INF}, {INF, INF} };
   ev_score_t bonus;
   char buf[MAX_CHARS_IN_MOVE];
-  int white_pawns = 0;
-  int black_pawns = 0;
+  uint8_t white_pawns = 0;
+  uint8_t black_pawns = 0;
 
-  for(int c = 0; c < 2; c++) {
-    for(int i = 0; i < NUMBER_PAWNS; i++) {
+  for(uint8_t c = 0; c < 2; c++) {
+    for(uint8_t i = 0; i < NUMBER_PAWNS; i++) {
       square_t sq = p->plocs[c][i];
       if(sq == 0) continue;
       fil_t f = fil_of(sq);
@@ -328,7 +332,7 @@ score_t eval(position_t *p, bool verbose) {
     }
   }
 
-  for(int c = 0; c < 2; c++) {
+  for(uint8_t c = 0; c < 2; c++) {
     square_t sq = p->kloc[c];
     fil_t f = fil_of(sq);
     rnk_t r = rnk_of(sq);
