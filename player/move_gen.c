@@ -122,7 +122,8 @@ void init_zob() {
 
 // For no square, use 0, which is guaranteed to be off board
 square_t square_of(fil_t f, rnk_t r) {
-  square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
+//  square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
+  square_t s = (square_t)square_of_table[f+3][r+3]; // the fil and rnk range from [-3,10] and [-3, 13] respectively so the +3 accounts for this
   DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
   tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
   return s;
