@@ -24,9 +24,7 @@ bool parallel_parent_aborted(searchNode* node) {
 // Checks whether this node has aborted due to a cut-off.
 //   If this occurs, we should actually return the score.
 bool parallel_node_aborted(searchNode* node) {
-  if (node->abort) {
-    return true;
-  }
+  if (node->abort) return true;
   return false;
 }
 
