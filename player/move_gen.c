@@ -283,7 +283,6 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
           break;
         case PAWN:
           if (laser_map[sq] == 1) continue;  // Piece is pinned down by laser.
-        case KING:
           if (color != color_to_move) {  // Wrong color
             break;
           }
@@ -325,12 +324,31 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
             sortable_move_list[move_count++] = move_of(typ, (rot_t) 0, sq, sq);
           }
           break;
+        case KING:
+          break;
         case INVALID:
         default:
           tbassert(false, "Bogus, man.\n");  // Couldn't BE more bogus!
       }
     }
   }
+  //if(p->kloc[color_to_move] == 0) return move_count;
+  for (int d = 0; d < 8; d++) {
+     int dest = p->kloc[color_to_move] + dir_of(d);
+     // Skip moves into invalid squares, squares occupied by
+     // kings, nonempty squares if x is a king, and squares with
+     // pawns of matching color
+     if ((ptype_of(p->board[dest]) != EMPTY)) {
+        continue;    // illegal square
+     }
+     sortable_move_list[move_count++] = move_of(KING, (rot_t) 0, p->kloc[color_to_move], dest);
+  }
+  for (int rot = 1; rot < 4; ++rot) {
+    tbassert(move_count < MAX_NUM_MOVES, "move_count: %d\n", move_count);
+    sortable_move_list[move_count++] = move_of(KING, (rot_t) rot, p->kloc[color_to_move], p->kloc[color_to_move]);
+  }
+  tbassert(move_count < MAX_NUM_MOVES, "move_count: %d\n", move_count);
+  sortable_move_list[move_count++] = move_of(KING, (rot_t) 0, p->kloc[color_to_move], p->kloc[color_to_move]);
 
   WHEN_DEBUG_VERBOSE({
       DEBUG_LOG(1, "\nGenerated moves: ");
