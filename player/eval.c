@@ -192,11 +192,23 @@ float h_dist(square_t a, square_t b) {
 // laser_map : end result will be stored here. Every square on the
 //             path of the laser is marked with mark_mask
 // c : color of king shooting laser
-// mark_mask: what each square is marked with
+//
+// In the heuristics version of the mark_laser_path method, we are also calculating the three heuristic values
+// pawnpin, mobility, and h_squares_attackable.
+//
+// PAWNPIN Heuristic: count number of pawns that are pinned by the
+//   opposing king's laser --- and are thus immobile.
+// 
+// MOBILITY heuristic: safe squares around king of color opp_color(c).
+//
+// H_ATTACKABLE heuristic: add value the closer the laser comes to the king
+// h_attackable adds the harmonic distance from a marked laser square to the enemy square
+// closer the laser is to enemy king, higher the value is
 heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t * heuristics) {
   position_t np = *p;
   square_t king_sq = p->kloc[opp_color(c)];
-
+  
+  // Initialize the h_squares_attackable value
   float h_attackable = 0;
 
   // Fire laser, recording in laser_map
@@ -213,6 +225,7 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t
   int sq_rank = rnk_of(sq);
   int sq_file = fil_of(sq);
 
+  // Check to see if the first block the laser fired in is directly surrounding the king, if so decrease mobility
   if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top)) {
       heuristics->mobility--;
   }
@@ -246,6 +259,7 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t
         break;
       case PAWN:  // Pawn
         h_attackable += h_dist(sq, king_sq);
+        // We have hit a pawn and pinned it, increment appropriately
         if (color_of(p->board[sq]) != c) {
           heuristics->pawnpin++;
         }
@@ -264,175 +278,6 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t
       case INVALID:  // Ran off edge of board
         heuristics->h_attackable = h_attackable;
         return heuristics;
-        break;
-      default:  // Shouldna happen, man!
-        tbassert(false, "Not cool, man.  Not cool.\n");
-        break;
-    }
-  }
-}
-
-// PAWNPIN Heuristic: count number of pawns that are pinned by the
-//   opposing king's laser --- and are thus immobile.
-int pawnpin(position_t *p, color_t color) {
-  color_t c = opp_color(color);
-  //int pinned_pawns = mark_laser_path_pinned(p, c);  // find path of laser given that you aren't moving
-  position_t np = *p;
-
-  // Fire laser, recording in laser_map
-  square_t sq = np.kloc[c];
-  int bdir = ori_of(np.board[sq]);
-
-  tbassert(ptype_of(np.board[sq]) == KING,
-           "ptype: %d\n", ptype_of(np.board[sq]));
-  int pinned_pawns = 0;
-  int beam = beam_of(bdir);
-  while (true) {
-    sq += beam;
-    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
-
-    switch (ptype_of(p->board[sq])) {
-      case EMPTY:  // empty square
-        break;
-      case PAWN:  // Pawn
-        if (color_of(p->board[sq]) != c) {
-          pinned_pawns++;
-        }
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
-        if (bdir < 0) {  // Hit back of Pawn
-          return pinned_pawns;
-        }
-        beam = beam_of(bdir);
-        break;
-      case KING:  // King
-        return pinned_pawns;  // sorry, game over my friend!
-        break;
-      case INVALID:  // Ran off edge of board
-        return pinned_pawns;
-        break;
-      default:  // Shouldna happen, man!
-        tbassert(false, "Not cool, man.  Not cool.\n");
-        break;
-    }
-  }
-  return pinned_pawns;
-}
-
-// MOBILITY heuristic: safe squares around king of color color.
-int mobility(position_t *p, color_t color) {
-  color_t c = opp_color(color);
-  position_t np = *p;
-  int mobility = 9;
-
-  // Fire laser, recording in laser_map
-  square_t sq = np.kloc[c];
-  int bdir = ori_of(np.board[sq]);
-
-  tbassert(ptype_of(np.board[sq]) == KING,
-           "ptype: %d\n", ptype_of(np.board[sq]));
-  
-  square_t king_sq = p->kloc[color];
-  
-  // Create a bounding box around king's square
-  int right = fil_of(king_sq)+1;
-  int left = fil_of(king_sq)-1;
-  int top = rnk_of(king_sq)+1;
-  int bottom = rnk_of(king_sq)-1;
-  
-  // Column & Row of laser Square
-  int sq_rank = rnk_of(sq);
-  int sq_file = fil_of(sq);
-
-  if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top)) {
-      mobility--;
-  }
-  
-  // Mark any invalid squares surrounding the king as not mobile
-  for (int d = 0; d < 8; ++d) {
-    square_t new_sq = king_sq + dir_of(d);
-    if (ptype_of(p->board[new_sq]) == INVALID) {
-      mobility--;
-    }
-  }
-
-  int beam = beam_of(bdir);
-
-  while (true) { 
-    sq += beam;
-    sq_file = fil_of(sq);
-    sq_rank = rnk_of(sq);
-  
-    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
-
-    if ((sq_file <= right && sq_file >= left) && (sq_rank >= bottom && sq_rank <= top) && ptype_of(p->board[sq]) != INVALID) {
-      mobility--;
-    }  
-
-    switch (ptype_of(p->board[sq])) {
-      case EMPTY:  // empty square
-        break;
-      case PAWN:  // Pawn
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
-        if (bdir < 0) {  // Hit back of Pawn
-          return mobility;
-        }
-        beam = beam_of(bdir);
-        break;
-      case KING:  // King
-        return mobility;  // sorry, game over my friend!
-        break;
-      case INVALID:  // Ran off edge of board
-        return mobility;
-        break;
-      default:  // Shouldna happen, man!
-        tbassert(false, "Not cool, man.  Not cool.\n");
-        break;
-    }
-  }
-
-}
-
-// H_SQUARES_ATTACKABLE heuristic: for shooting the enemy king
-int h_squares_attackable(position_t *p, color_t c) {
-  position_t np = *p;
-  
-  // h_attackable adds the harmonic distance from a marked laser square to the enemy square
-  // closer the laser is to enemy king, higher the value is
-  float h_attackable = 0;
-  square_t o_king_sq = p->kloc[opp_color(c)];
- 
-  // Fire laser, recording in laser_map
-  square_t sq = np.kloc[c];
-  int bdir = ori_of(np.board[sq]);
-
-  tbassert(ptype_of(np.board[sq]) == KING,
-           "ptype: %d\n", ptype_of(np.board[sq]));
-
-  h_attackable += h_dist(sq, o_king_sq);
-  int beam = beam_of(bdir);
-
-  while (true) {
-    sq += beam;
-    tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
-
-    switch (ptype_of(p->board[sq])) {
-      case EMPTY:  // empty square
-        h_attackable += h_dist(sq, o_king_sq);
-        break;
-      case PAWN:  // Pawn
-        h_attackable += h_dist(sq, o_king_sq); 
-        bdir = reflect_of(bdir, ori_of(p->board[sq]));
-        if (bdir < 0) {  // Hit back of Pawn
-          return h_attackable;
-        }
-        beam = beam_of(bdir);
-        break;
-      case KING:  // King
-        h_attackable += h_dist(sq, o_king_sq);
-        return h_attackable;  // sorry, game over my friend!
-        break;
-      case INVALID:  // Ran off edge of board
-        return h_attackable;
         break;
       default:  // Shouldna happen, man!
         tbassert(false, "Not cool, man.  Not cool.\n");
@@ -512,7 +357,8 @@ score_t eval(position_t *p, bool verbose) {
 
   heuristics_t black_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
   heuristics_t * b_heuristics = &black_heuristics;
-
+  
+  // Calculate the heursitics for the white and black color
   mark_laser_path_heuristics(p, BLACK, w_heuristics);
   mark_laser_path_heuristics(p, WHITE, b_heuristics);
 
