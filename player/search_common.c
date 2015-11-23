@@ -432,7 +432,9 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
                          int hash_table_move) {
   // number of moves in list
   int num_of_moves = generate_all(&(node->position), move_list, false);
-
+  for(int i = 0; i < num_of_moves; i++) {
+    printf("move i %d before val %lu\n",i, move_list[i]);
+  }
   color_t fake_color_to_move = color_to_move_of(&(node->position));
 
   move_t killer_a = killer[KMT(node->ply, 0)];
@@ -457,6 +459,10 @@ static int get_sortable_move_list(searchNode *node, sortable_move_t * move_list,
                    best_move_history[BMH(fake_color_to_move, pce, ts, ot)]);
     }
   }
+  for(int i = 0; i < num_of_moves; i++) {
+    printf("move i %d after val %lu\n",i, move_list[i]);
+  }
+  tbassert(false,"stopped\n");
   return num_of_moves;
 }
 
