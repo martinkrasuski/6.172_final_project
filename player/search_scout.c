@@ -83,17 +83,17 @@ static score_t scout_search(searchNode *node, const int depth,
 
   int number_of_moves_evaluated = 0;
 
-
   // A simple mutex. See simple_mutex.h for implementation details.
   simple_mutex_t node_mutex;
   init_simple_mutex(&node_mutex);
 
   // Sort the move list.
-  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
+  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // Get the next move from the move list.
     int local_index = number_of_moves_evaluated++;
+    sort_incremental_new(move_list, num_of_moves, local_index);
     move_t mv = get_move(move_list[local_index]);
 
     if (TRACE_MOVES) {

@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+void sort_incremental_new(sortable_move_t *move_list, int num_of_moves, int mv_index);
+
 void qsort( void *buf, size_t num, size_t size, int (*compare)(const void *, const void *) );
 
 int compare(const void * a, const void * b);
@@ -373,7 +375,6 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   return result;
 }
 
-
 // Incremental sort of the move list.
 void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index) {
   for (int j = 0; j < num_of_moves; j++) {
@@ -385,6 +386,20 @@ void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index
     }
     move_list[hole] = insert;
   }
+}
+
+// Incremental sort of the move list.
+void sort_incremental_new(sortable_move_t *move_list, int num_of_moves, int mv_index) {
+  sortable_move_t insert = move_list[mv_index];
+  int hole = mv_index;
+  for (int j = mv_index+1; j < num_of_moves; j++) {
+    if (move_list[j] > insert) {
+      insert = move_list[j];
+      hole = j;     
+    }
+  }
+  move_list[hole] = move_list[mv_index];
+  move_list[mv_index] = insert;
 }
 
 // Returns true if a cutoff was triggered, false otherwise.
