@@ -376,6 +376,7 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
 }
 
 // Incremental sort of the move list.
+// This is the original implementation. This code just runs insertion sort on the different moves.
 void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index) {
   for (int j = 0; j < num_of_moves; j++) {
     sortable_move_t insert = move_list[j];
@@ -389,6 +390,9 @@ void sort_incremental(sortable_move_t *move_list, int num_of_moves, int mv_index
 }
 
 // Incremental sort of the move list.
+// New implementation. Instead of sorting the entire move list, just look for best move at each iteration
+// This works by starting from mv_index and iterating right until best move found then replacing.
+// While slower to sort entire list, faster for search because we find our beta cutoff early
 void sort_incremental_new(sortable_move_t *move_list, int num_of_moves, int mv_index) {
   sortable_move_t insert = move_list[mv_index];
   int hole = mv_index;

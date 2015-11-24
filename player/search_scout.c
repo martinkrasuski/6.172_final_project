@@ -89,10 +89,15 @@ static score_t scout_search(searchNode *node, const int depth,
 
   // Sort the move list.
   sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
+  
+  // This is the original code here, think it might be in place for parallelizing, so keeping it here
+  // but commented out for now
+  //sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // Get the next move from the move list.
     int local_index = number_of_moves_evaluated++;
+    // Added this line to use our new incremental_sort implementation, wasn't originally here
     sort_incremental_new(move_list, num_of_moves, local_index);
     move_t mv = get_move(move_list[local_index]);
 
