@@ -80,6 +80,10 @@ static score_t scout_search(searchNode *node, const int depth,
 
   // Obtain the sorted move list.
   const int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
+  
+  // For our parallel code we'll want to iterate over the first few values serially, then go parallel
+  // This variable sets how many nodes we'll search serially
+  const int first_iteration_value = num_of_moves >= 3 ? 3 : num_of_moves;
 
   int number_of_moves_evaluated = 0;
 
