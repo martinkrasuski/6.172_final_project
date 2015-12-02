@@ -24,7 +24,6 @@ int KFACE;
 int KAGGRESSIVE;
 int MOBILITY;
 int PAWNPIN;
-double bonus_divisor = BOARD_WIDTH / sqrt(2);
 typedef struct heuristics_t {
   int8_t pawnpin;
   int8_t h_attackable;
@@ -43,11 +42,7 @@ ev_score_t pcentral(const fil_t f, const rnk_t r) {
   if (df < 0)  df = f - BOARD_WIDTH/2;
   int dr  = BOARD_WIDTH/2 - r -1;
   if (dr < 0) dr = r - BOARD_WIDTH/2;
-  const double bonus = 1 - sqrt(df * df + dr * dr) / (bonus_divisor);
-//  printf("f = %d, r = %d bonus = %lf\n ", f, r, bonus_old);
-//  double bonus = pcentral_table[f][r];  
-  //tbassert(bonus == bonus_old, "bonus = %lf, bonus_old = %lf, diff = %lf", bonus, bonus_old, bonus - bonus_old); 
-  
+  const double bonus = 1 - sqrt(df * df + dr * dr) / (BONUS_DIVISOR);
   return PCENTRAL * bonus;
 }
 
@@ -295,7 +290,7 @@ score_t eval(position_t *p, const bool verbose) {
   ev_score_t score[2] = { 0, 0 };
   //  int corner[2][2] = { {INF, INF}, {INF, INF} };
   ev_score_t bonus;
-  char buf[MAX_CHARS_IN_MOVE];
+  //char buf[MAX_CHARS_IN_MOVE]; used for debugging/verbose purposes
   uint8_t white_pawns = 0;
   uint8_t black_pawns = 0;
 
@@ -351,26 +346,7 @@ score_t eval(position_t *p, const bool verbose) {
       }*/
     score[c] += bonus;
   }
-/*
-  for(uint8_t c = 0; c < 2; c++) {
-    square_t sq = p->kloc[c];
-    fil_t f = fil_of(sq);
-    rnk_t r = rnk_of(sq);
-    bonus = kface(p, f, r);
-    if (verbose) {
-      printf("KFACE bonus %d for %s King on %s\n", bonus,
-      color_to_str(c), buf);
-    }
-    score[c] += bonus;
 
-    // KAGGRESSIVE heuristic
-    bonus = kaggressive(p, f, r);
-    if (verbose) {
-      printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
-    }
-    score[c] += bonus;
-  }
-*/
   heuristics_t white_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
   heuristics_t * w_heuristics = &white_heuristics;
 
