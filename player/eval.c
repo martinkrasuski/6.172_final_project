@@ -24,7 +24,6 @@ int KFACE;
 int KAGGRESSIVE;
 int MOBILITY;
 int PAWNPIN;
-
 typedef struct heuristics_t {
   int8_t pawnpin;
   int8_t h_attackable;
@@ -39,15 +38,11 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t
 
 // PCENTRAL heuristic: Bonus for Pawn near center of board
 ev_score_t pcentral(const fil_t f, const rnk_t r) {
-  double df = BOARD_WIDTH/2 - f - 1;
+  int df = BOARD_WIDTH/2 - f -1;
   if (df < 0)  df = f - BOARD_WIDTH/2;
-  double dr = BOARD_WIDTH/2 - r - 1;
+  int dr  = BOARD_WIDTH/2 - r -1;
   if (dr < 0) dr = r - BOARD_WIDTH/2;
-  const double bonus = 1 - sqrt(df * df + dr * dr) / (BOARD_WIDTH / sqrt(2));
-//  printf("f = %d, r = %d bonus = %lf\n ", f, r, bonus_old);
-//  double bonus = pcentral_table[f][r];  
-  //tbassert(bonus == bonus_old, "bonus = %lf, bonus_old = %lf, diff = %lf", bonus, bonus_old, bonus - bonus_old); 
-  
+  const double bonus = 1 - sqrt(df * df + dr * dr) / (BONUS_DIVISOR);
   return PCENTRAL * bonus;
 }
 
@@ -204,15 +199,15 @@ float h_dist(const square_t a, const square_t b) {
 // h_attackable adds the harmonic distance from a marked laser square to the enemy square
 // closer the laser is to enemy king, higher the value is
 heuristics_t * mark_laser_path_heuristics(position_t *p, const color_t c, heuristics_t * heuristics) {
-  position_t np = *p;
+  position_t * np = p;
   square_t king_sq = p->kloc[opp_color(c)];
   
   // Initialize the h_squares_attackable value
   float h_attackable = 0;
 
   // Fire laser, recording in laser_map
-  square_t sq = np.kloc[c];
-  int8_t bdir = ori_of(np.board[sq]);
+  square_t sq = np->kloc[c];
+  int8_t bdir = ori_of(np->board[sq]);
 
   // Create a bounding box around king's square
   const int8_t right = fil_of(king_sq)+1;
@@ -238,8 +233,8 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, const color_t c, heuris
     }
   }
 
-  tbassert(ptype_of(np.board[sq]) == KING,
-           "ptype: %d\n", ptype_of(np.board[sq]));
+  tbassert(ptype_of(np->board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np->board[sq]));
   int8_t beam = beam_of(bdir);
   h_attackable += h_dist(sq, king_sq);
 
@@ -295,7 +290,7 @@ score_t eval(position_t *p, const bool verbose) {
   ev_score_t score[2] = { 0, 0 };
   //  int corner[2][2] = { {INF, INF}, {INF, INF} };
   ev_score_t bonus;
-  char buf[MAX_CHARS_IN_MOVE];
+  //char buf[MAX_CHARS_IN_MOVE]; used for debugging/verbose purposes
   uint8_t white_pawns = 0;
   uint8_t black_pawns = 0;
 
@@ -313,23 +308,23 @@ score_t eval(position_t *p, const bool verbose) {
       }
       // MATERIAL heuristic: Bonus for each Pawn
       bonus = PAWN_EV_VALUE;
-      if (verbose) {
+      /*if (verbose) {
          printf("MATERIAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
-      }
+         }*/
       score[c] += bonus;
 
       // PBETWEEN heuristic
       bonus = pbetween(p, f, r);
-      if (verbose) {
+      /*if (verbose) {
         printf("PBETWEEN bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
-      }
+        }*/
       score[c] += bonus;
 
       // PCENTRAL heuristic
       bonus = pcentral(f, r);
-      if (verbose) {
+      /*if (verbose) {
          printf("PCENTRAL bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
-      }
+         }*/
       score[c] += bonus;
     }
 
@@ -338,39 +333,20 @@ score_t eval(position_t *p, const bool verbose) {
     const fil_t f = fil_of(sq);
     const rnk_t r = rnk_of(sq);
     bonus = kface(p, f, r);
-    if (verbose) {
+    /*if (verbose) {
       printf("KFACE bonus %d for %s King on %s\n", bonus,
       color_to_str(c), buf);
-    }
+      }*/
     score[c] += bonus;
 
     // KAGGRESSIVE heuristic
     bonus = kaggressive(p, f, r);
-    if (verbose) {
+    /*if (verbose) {
       printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
-    }
+      }*/
     score[c] += bonus;
   }
-/*
-  for(uint8_t c = 0; c < 2; c++) {
-    square_t sq = p->kloc[c];
-    fil_t f = fil_of(sq);
-    rnk_t r = rnk_of(sq);
-    bonus = kface(p, f, r);
-    if (verbose) {
-      printf("KFACE bonus %d for %s King on %s\n", bonus,
-      color_to_str(c), buf);
-    }
-    score[c] += bonus;
 
-    // KAGGRESSIVE heuristic
-    bonus = kaggressive(p, f, r);
-    if (verbose) {
-      printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
-    }
-    score[c] += bonus;
-  }
-*/
   heuristics_t white_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
   heuristics_t * w_heuristics = &white_heuristics;
 
@@ -383,25 +359,25 @@ score_t eval(position_t *p, const bool verbose) {
 
   const ev_score_t w_hattackable = HATTACK * b_heuristics->h_attackable;
   score[WHITE] += w_hattackable;
-  if (verbose) {
+  /*if (verbose) {
     printf("HATTACK bonus %d for White\n", w_hattackable);
-  }
+    }*/
   const ev_score_t b_hattackable = HATTACK * w_heuristics->h_attackable;
   score[BLACK] += b_hattackable;
-  if (verbose) {
+  /*if (verbose) {
     printf("HATTACK bonus %d for Black\n", b_hattackable);
-  }
+    }*/
 
   const int w_mobility = MOBILITY * w_heuristics->mobility;
   score[WHITE] += w_mobility;
-  if (verbose) {
+  /*if (verbose) {
     printf("MOBILITY bonus %d for White\n", w_mobility);
-  }
+    }*/
   const int b_mobility = MOBILITY * b_heuristics->mobility;
   score[BLACK] += b_mobility;
-  if (verbose) {
+  /*if (verbose) {
     printf("MOBILITY bonus %d for Black\n", b_mobility);
-  }
+    }*/
 
   // PAWNPIN Heuristic --- is a pawn immobilized by the enemy laser.
   const int w_pawnpin = PAWNPIN * (white_pawns - w_heuristics->pawnpin);
