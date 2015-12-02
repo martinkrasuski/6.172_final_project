@@ -36,7 +36,7 @@ static void update_best_move_history(position_t *p, int index_of_best,
     if (index_of_best == i) {
       s = s + 11200;  // number will never exceed 1017
     }
-    s = s * 0.90;  // decay score over time
+    s = s * 0.85;  // decay score over time
 
     tbassert(s < 102000, "s = %d\n", s);  // or else sorting will fail
 
