@@ -49,7 +49,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-  __cilkrts_set_param("nworkers","8");
+  __cilkrts_set_param("nworkers","1");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -94,17 +94,16 @@ static score_t scout_search(searchNode *node, const int depth,
   init_simple_mutex(&node_mutex);
 
   // Sort the move list.
-  // sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
+  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
   
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
-  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
   for (int mv_index = 0; mv_index < first_iteration_value; mv_index++) {
     // Get the next move from the move list.
     int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
     // Added this line to use our new incremental_sort implementation, wasn't originally here
-    //sort_incremental_new(move_list, num_of_moves, local_index);
+    sort_incremental_new(move_list, num_of_moves, local_index);
     move_t mv = get_move(move_list[local_index]);
 
     if (TRACE_MOVES) {
@@ -140,6 +139,8 @@ static score_t scout_search(searchNode *node, const int depth,
   }
   
   if (!(node->abort)) {
+  
+  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
   cilk_for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
     do {
