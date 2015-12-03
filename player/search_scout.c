@@ -83,7 +83,7 @@ static score_t scout_search(searchNode *node, const int depth,
   
   // For our parallel code we'll want to iterate over the first few values serially, then go parallel
   // This variable sets how many nodes we'll search serially
-  const int first_iteration_value = num_of_moves >= 3 ? 3 : num_of_moves;
+  const int first_iteration_value = num_of_moves >= 6 ? 6 : num_of_moves;
 
   int number_of_moves_evaluated = 0;
 
@@ -98,7 +98,48 @@ static score_t scout_search(searchNode *node, const int depth,
   // but commented out for now
   sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
-  cilk_for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+  for (int mv_index = 0; mv_index < first_iteration_value; mv_index++) {
+    // Get the next move from the move list.
+    int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+    // Added this line to use our new incremental_sort implementation, wasn't originally here
+    //sort_incremental_new(move_list, num_of_moves, local_index);
+    move_t mv = get_move(move_list[local_index]);
+
+    if (TRACE_MOVES) {
+      print_move_info(mv, node->ply);
+    }
+
+    // increase node count
+    __sync_fetch_and_add(node_count_serial, 1);
+
+    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
+                                               SEARCH_SCOUT,
+                                               node_count_serial);
+
+    if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
+        || abortf || parallel_parent_aborted(node)) {
+      continue;
+    }
+
+    // A legal move is a move that's not KO, but when we are in quiescence
+    // we only want to count moves that has a capture.
+    if (result.type == MOVE_EVALUATED) {
+      //node->legal_move_count++;
+      __sync_fetch_and_add(&node->legal_move_count, 1); 
+    }
+
+    // process the score. Note that this mutates fields in node.
+    bool cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
+
+    if (cutoff) {
+      node->abort = true;
+      break;
+    }
+  }
+  
+  if (!(node->abort)) {
+
+  cilk_for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
     do {
       if (node->abort) continue;
       // Get the next move from the move list.
@@ -139,6 +180,8 @@ static score_t scout_search(searchNode *node, const int depth,
         continue;
       }
     } while (false);
+  }
+
   }
 
   if (parallel_parent_aborted(node)) {
