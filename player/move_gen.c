@@ -120,7 +120,29 @@ void init_zob() {
   zob_color = myrand();
 }
 
+// For no square, use 0, which is guaranteed to be off board
+square_t square_of(fil_t f, rnk_t r) {
+  square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
+  DEBUG_LOG(1, "Square of (file %d, rank %d) is %d\n", f, r, s);
+  tbassert((s >= 0) && (s < ARR_SIZE), "s: %d\n", s);
+  return s;
+}
 
+// Finds file of square
+fil_t fil_of(square_t sq) {
+  fil_t f = ((sq >> FIL_SHIFT) & FIL_MASK) - FIL_ORIGIN;
+  DEBUG_LOG(1, "File of square %d is %d\n", sq, f);
+  return f;
+}
+
+// Finds rank of square
+rnk_t rnk_of(square_t sq) {
+  rnk_t r = ((sq >> RNK_SHIFT) & RNK_MASK) - RNK_ORIGIN;
+  DEBUG_LOG(1, "Rank of square %d is %d\n", sq, r);
+  return r;
+}
+
+/*
 // For no square, use 0, which is guaranteed to be off board
 inline square_t square_of(const fil_t f, const rnk_t r) {
 //  square_t s = ARR_WIDTH * (FIL_ORIGIN + f) + RNK_ORIGIN + r;
@@ -144,6 +166,7 @@ inline rnk_t rnk_of(const square_t sq) {
   DEBUG_LOG(1, "Rank of square %d is %d\n", sq, r);
   return r;
 }
+*/
 
 // converts a square to string notation, returns number of characters printed
 inline int square_to_str(const square_t sq, char *buf, const size_t bufsize) {
