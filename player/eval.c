@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "./tbassert.h"
-#include "./precomp_tables.c"
+#include "./precomp_tables.h"
 
 // -----------------------------------------------------------------------------
 // Evaluation
