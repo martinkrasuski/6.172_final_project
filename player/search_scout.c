@@ -7,6 +7,7 @@
 
 #include "./tbassert.h"
 #include "./simple_mutex.h"
+#include <cilk/cilk_api.h>
 
 // Checks whether a node's parent has aborted.
 //   If this occurs, we should just stop and return 0 immediately.
@@ -48,6 +49,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
+  __cilkrts_set_param("nworkers","1");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -80,6 +82,10 @@ static score_t scout_search(searchNode *node, const int depth,
 
   // Obtain the sorted move list.
   const int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
+  
+  // For our parallel code we'll want to iterate over the first few values serially, then go parallel
+  // This variable sets how many nodes we'll search serially
+  const int first_iteration_value = num_of_moves >= 4 ? 4 : num_of_moves;
 
   int number_of_moves_evaluated = 0;
 
@@ -92,11 +98,10 @@ static score_t scout_search(searchNode *node, const int depth,
   
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
-  //sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
-  for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+  for (int mv_index = 0; mv_index < first_iteration_value; mv_index++) {
     // Get the next move from the move list.
-    int local_index = number_of_moves_evaluated++;
+    int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
     // Added this line to use our new incremental_sort implementation, wasn't originally here
     sort_incremental_new(move_list, num_of_moves, local_index);
     move_t mv = get_move(move_list[local_index]);
@@ -120,7 +125,8 @@ static score_t scout_search(searchNode *node, const int depth,
     // A legal move is a move that's not KO, but when we are in quiescence
     // we only want to count moves that has a capture.
     if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
+      //node->legal_move_count++;
+      __sync_fetch_and_add(&node->legal_move_count, 1); 
     }
 
     // process the score. Note that this mutates fields in node.
@@ -130,6 +136,55 @@ static score_t scout_search(searchNode *node, const int depth,
       node->abort = true;
       break;
     }
+  }
+  
+  if (!(node->abort)) {
+  
+  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
+
+  cilk_for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
+    do {
+      if (node->abort) continue;
+      // Get the next move from the move list.
+      int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+      // Added this line to use our new incremental_sort implementation, wasn't originally here
+      // sort_incremental_new(move_list, num_of_moves, local_index);
+      move_t mv = get_move(move_list[local_index]);
+
+      if (TRACE_MOVES) {
+        print_move_info(mv, node->ply);
+      }
+
+      // increase node count
+      __sync_fetch_and_add(node_count_serial, 1);
+
+      moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
+                                               SEARCH_SCOUT,
+                                               node_count_serial);
+
+      if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
+          || abortf || parallel_parent_aborted(node)) {
+        continue;
+      }
+
+      // A legal move is a move that's not KO, but when we are in quiescence
+      // we only want to count moves that has a capture.
+      if (result.type == MOVE_EVALUATED) {
+        // node->legal_move_count++;
+        __sync_fetch_and_add(&node->legal_move_count, 1); 
+      }
+
+      // process the score. Note that this mutates fields in node.
+      simple_acquire(&node_mutex);
+      bool cutoff = search_process_score(node, mv, local_index, &result, SEARCH_SCOUT);
+      simple_release(&node_mutex);
+      if (cutoff) {
+        node->abort = true;
+        continue;
+      }
+    } while (false);
+  }
+
   }
 
   if (parallel_parent_aborted(node)) {
