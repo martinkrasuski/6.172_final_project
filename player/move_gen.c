@@ -13,7 +13,7 @@
 #include "./fen.h"
 #include "./search.h"
 #include "./util.h"
-#include "./precomp_tables.h"
+//#include "./precomp_tables.h"
 
 #define MAX(x, y)  ((x) > (y) ? (x) : (y))
 #define MIN(x, y)  ((x) < (y) ? (x) : (y))
