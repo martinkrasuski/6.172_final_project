@@ -34,7 +34,7 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, color_t c, heuristics_t
 
 // Heuristics for static evaluation - described in the google doc
 // mentioned in the handout.
-
+bool inRange(const int min, const int max, const int val);
 
 // PCENTRAL heuristic: Bonus for Pawn near center of board
 ev_score_t pcentral(const fil_t f, const rnk_t r) {
@@ -52,6 +52,10 @@ inline bool between(const int c, const int a, const int b) {
   return ((c >= a) && (c <= b)) || ((c <= a) && (c >= b));
 }
 
+// checks if between max and min
+inline bool inRange(const int min, const int max, const int val) {
+  return (val >= min) && (val <= max);
+}
 // PBETWEEN heuristic: Bonus for Pawn at (f, r) in rectangle defined by Kings at the corners
 ev_score_t pbetween(const position_t *p, const fil_t f, const rnk_t r) {
   const bool is_between =
@@ -315,7 +319,28 @@ score_t eval(position_t *p, const bool verbose) {
   //char buf[MAX_CHARS_IN_MOVE]; used for debugging/verbose purposes
   uint8_t white_pawns = 0;
   uint8_t black_pawns = 0;
+  rnk_t king_max_rnk = 0;
+  rnk_t king_min_rnk = 16;
+  fil_t king_max_fil = 0;
+  fil_t king_min_fil = 16;
+  for(uint8_t c = 0; c < 2; c ++) {
+    
+    // Adds score for color's king
+    const square_t sq = p->kloc[c];
+    const fil_t f = fil_of(sq);
+    const rnk_t r = rnk_of(sq);
+    king_max_rnk = r > king_max_rnk ? r : king_max_rnk;
+    king_min_rnk = r < king_min_rnk ? r : king_min_rnk;
+    king_max_fil = f > king_max_fil ? f : king_max_fil;
+    king_min_fil = f < king_min_fil ? f : king_min_fil;
+    bonus = kface(p, f, r);
 
+    score[c] += bonus;
+
+    // KAGGRESSIVE heuristic
+    bonus = kaggressive(p, f, r);
+    score[c] += bonus;
+  }
   for(uint8_t c = 0; c < 2; c++) {
     // Adds score for color's pawns
     for(uint8_t i = 0; i < NUMBER_PAWNS; i++) {
@@ -336,7 +361,8 @@ score_t eval(position_t *p, const bool verbose) {
       score[c] += bonus;
 
       // PBETWEEN heuristic
-      bonus = pbetween(p, f, r);
+      //bonus = pbetween(p, f, r);
+      bonus = inRange(king_min_rnk, king_max_rnk, r) && inRange(king_min_fil, king_max_fil, f) ? PBETWEEN : 0;
       /*if (verbose) {
         printf("PBETWEEN bonus %d for %s Pawn on %s\n", bonus, color_to_str(c), buf);
         }*/
@@ -349,24 +375,6 @@ score_t eval(position_t *p, const bool verbose) {
          }*/
       score[c] += bonus;
     }
-
-    // Adds score for color's king
-    const square_t sq = p->kloc[c];
-    const fil_t f = fil_of(sq);
-    const rnk_t r = rnk_of(sq);
-    bonus = kface(p, f, r);
-    /*if (verbose) {
-      printf("KFACE bonus %d for %s King on %s\n", bonus,
-      color_to_str(c), buf);
-      }*/
-    score[c] += bonus;
-
-    // KAGGRESSIVE heuristic
-    bonus = kaggressive(p, f, r);
-    /*if (verbose) {
-      printf("KAGGRESSIVE bonus %d for %s King on %s\n", bonus, color_to_str(c), buf);
-      }*/
-    score[c] += bonus;
   }
 
   heuristics_t white_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
