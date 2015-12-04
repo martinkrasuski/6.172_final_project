@@ -224,7 +224,8 @@ void *entry_point(void *arg) {
 // Makes call to entry_point -> make call to searchRoot -> searchRoot in search.c
 void UciBeginSearch(position_t *p, int depth, double tme) {
   pthread_mutex_lock(&entry_mutex);  // setup for the barrier
-
+  //printf("tme %lf\n", tme);
+  use_precomp = tme > 3500;
   entry_point_args args;
   args.depth = depth;
   args.p = p;

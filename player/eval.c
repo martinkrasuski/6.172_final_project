@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "./tbassert.h"
-//#include "./precomp_tables.h"
+#include "./precomp_tables.h"
 
 // -----------------------------------------------------------------------------
 // Evaluation
@@ -176,12 +176,15 @@ void mark_laser_path(position_t *p, char *laser_map, const color_t c,
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
 float h_dist(square_t a, square_t b) {
-  int delta_fil = fil_of(a) - fil_of(b);
-  delta_fil = delta_fil < 0 ? -(delta_fil) : delta_fil;
-  int delta_rnk = rnk_of(a) - rnk_of(b);
-  delta_rnk = delta_rnk < 0 ? -(delta_rnk) : delta_rnk; 
-  float x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
-  return x;
+  if(use_precomp) {
+    return h_dist_table[a][b];
+  } else { 
+    int delta_fil = fil_of(a) - fil_of(b);
+    delta_fil = delta_fil < 0 ? -(delta_fil) : delta_fil;
+    int delta_rnk = rnk_of(a) - rnk_of(b);
+    delta_rnk = delta_rnk < 0 ? -(delta_rnk) : delta_rnk; 
+    return (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
+  }
 }
 /*
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
