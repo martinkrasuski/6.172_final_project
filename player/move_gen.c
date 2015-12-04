@@ -505,9 +505,9 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
       }
     });
 
-  *p = *old; // needs to copy key
+//  *p = *old; // needs to copy key
 
-  p->history = old;
+//  p->history = old;
   p->last_move = mv;
 
   tbassert(from_sq < ARR_SIZE && from_sq > 0, "from_sq: %d\n", from_sq);
@@ -723,6 +723,108 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
   }
   //assert_pawn_locs(p);
   return p->victims;
+}
+
+void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
+  square_t from_sq = from_square(mv);
+  square_t to_sq = to_square(mv);
+  rot_t rot = rot_of(mv);
+
+  p->key ^= zob_color;   // swap color to move
+
+  piece_t from_piece = p->board[from_sq];
+  const piece_t to_piece = p->board[to_sq];
+
+  if (to_sq != from_sq) {  // move, not rotation
+    if (PAWN == ptype_of(from_piece) &&
+        PAWN == ptype_of(to_piece) &&
+        color_of(to_piece) == opp_color(color_of(from_piece))) {
+      // We're stomping a piece.  Return the destination of the
+      // stomped piece.  Let the caller remove the piece from the
+      // board.
+      stomped_dst_sq = from_sq;
+    }
+
+    // Hash key updates
+    p->key ^= zob[from_sq][from_piece];  // remove from_piece from from_sq
+    p->key ^= zob[to_sq][to_piece];  // remove to_piece from to_sq
+
+    p->board[to_sq] = from_piece;  // swap from_piece and to_piece on board
+    p->board[from_sq] = to_piece;
+
+    p->key ^= zob[to_sq][from_piece];  // place from_piece in to_sq
+    p->key ^= zob[from_sq][to_piece];  // place to_piece in from_sq
+
+    // Update King locations if necessary
+    if (ptype_of(from_piece) == KING) {
+      p->kloc[color_of(from_piece)] = to_sq;
+    }
+    if (ptype_of(to_piece) == KING) {
+      p->kloc[color_of(to_piece)] = from_sq;
+    }
+    // Update pawn locations if necessary
+    if (ptype_of(from_piece) == PAWN) {
+      for(int i = 0; i < NUMBER_PAWNS; i++) {
+        if(p->plocs[color_of(from_piece)][i] == from_sq) {
+          p->plocs[color_of(from_piece)][i] = to_sq;
+        }
+      }
+    }
+    if (ptype_of(to_piece) == PAWN) {
+      for(int i = 0; i < NUMBER_PAWNS; i++) {
+        if(p->plocs[color_of(to_piece)][i] == to_sq) {
+          p->plocs[color_of(to_piece)][i] = from_sq;
+        }
+      }
+    }
+  } else {  // rotation
+    // remove from_piece from from_sq in hash
+    p->key ^= zob[from_sq][from_piece];
+    set_ori(&from_piece, rot + ori_of(from_piece));  // rotate from_piece
+    p->board[from_sq] = from_piece;  // place rotated piece on board
+    p->key ^= zob[from_sq][from_piece];              // ... and in hash
+  }
+
+  // Increment ply
+//  p->ply++;
+
+}
+
+void unmake_move(position_t *old, position_t *p, const move_t mv, const square_t stomped_sq, const square_t victim_sq) {
+  
+  // move phase 1 - moving a piece, which may result in a stomp
+  // const square_t stomped_sq = low_level_make_move(old, p, mv);
+
+  if (p->vistims.stomped != 0) { // we definitely stomped something
+//    p->victims.stomped = p->board[stomped_sq];
+    const color_t stomped_color = color_of(p->board[stomped_sq]);
+    p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
+    p->board[stomped_sq] = 1;
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      if(p->plocs[stomped_color][i] == stomped_sq) {
+        p->plocs[stomped_color][i] = 1;
+      }
+    }
+    p->key ^= zob[stomped_sq][p->board[stomped_sq]];
+  }
+
+  // move phase 2 - shooting the laser
+  // const square_t victim_sq = fire(p);
+
+  if (p->victims.zapped != 0) { // we definitely hit something with laser
+    color_t zapped_color = color_of(p->board[victim_sq]);
+    p->victims.zapped = p->board[victim_sq];
+    p->key ^= zob[victim_sq][p->victims.zapped];   // remove from board
+    p->board[victim_sq] = 0;
+    p->key ^= zob[victim_sq][0];
+    for(int i = 0; i < NUMBER_PAWNS; i++) {
+      if(p->plocs[zapped_color][i] == victim_sq) {
+        p->plocs[zapped_color][i] = 0;
+      }
+    }
+  }
+  //assert_pawn_locs(p);
+//  return p->victims;
 }
 
 // helper function for do_perft
