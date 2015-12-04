@@ -505,9 +505,9 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
       }
     });
 
-//  *p = *old; // needs to copy key
+  //*p = *old; // needs to copy key
 
-//  p->history = old;
+  //p->history = old;
   p->last_move = mv;
 
   tbassert(from_sq < ARR_SIZE && from_sq > 0, "from_sq: %d\n", from_sq);
@@ -656,11 +656,13 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   if (stomped_sq == 0) {
     p->victims.stomped = 0;
-
+    p->victims.victim_sq = 0;
     // Don't check for Ko yet.
 
   } else {  // we definitely stomped something
     p->victims.stomped = p->board[stomped_sq];
+    p->victims.stomped_sq = stomped_sq;
+
     const color_t stomped_color = color_of(p->board[stomped_sq]);
     p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
     p->board[stomped_sq] = 0;
@@ -693,7 +695,7 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   if (victim_sq == 0) {
     p->victims.zapped = 0;
-
+    p->victims.victim_sq = 0;
     if (USE_KO &&  // Ko rule
         zero_victims(p->victims) &&
         (p->key == (old->key ^ zob_color))) {
@@ -704,6 +706,7 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
   } else {  // we definitely hit something with laser
     color_t zapped_color = color_of(p->board[victim_sq]);
     p->victims.zapped = p->board[victim_sq];
+    p->victims.victim_sq = victim_sq;
     p->key ^= zob[victim_sq][p->victims.zapped];   // remove from board
     p->board[victim_sq] = 0;
     p->key ^= zob[victim_sq][0];
@@ -730,12 +733,16 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
   square_t to_sq = to_square(mv);
   rot_t rot = rot_of(mv);
 
-  p->key ^= zob_color;   // swap color to move
+//  p->key ^= zob_color;   // swap color to move
 
-  piece_t from_piece = p->board[from_sq];
-  const piece_t to_piece = p->board[to_sq];
+//  piece_t from_piece = p->board[from_sq];
+//  const piece_t to_piece = p->board[to_sq];
+  // Reverse these pieces
+  piece_t from_piece = p->board[to_sq];
+  const piece_t to_piece = p->board[from_sq];
 
   if (to_sq != from_sq) {  // move, not rotation
+    /*
     if (PAWN == ptype_of(from_piece) &&
         PAWN == ptype_of(to_piece) &&
         color_of(to_piece) == opp_color(color_of(from_piece))) {
@@ -744,7 +751,7 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
       // board.
       stomped_dst_sq = from_sq;
     }
-
+    */
     // Hash key updates
     p->key ^= zob[from_sq][from_piece];  // remove from_piece from from_sq
     p->key ^= zob[to_sq][to_piece];  // remove to_piece from to_sq
@@ -788,43 +795,50 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
   // Increment ply
 //  p->ply++;
 
+  p->key ^= zob_color;   // swap color to move last
+
 }
 
-void unmake_move(position_t *old, position_t *p, const move_t mv, const square_t stomped_sq, const square_t victim_sq) {
+void unmake_move(position_t *old, position_t *p, const move_t mv) {
   
   // move phase 1 - moving a piece, which may result in a stomp
   // const square_t stomped_sq = low_level_make_move(old, p, mv);
 
-  if (p->vistims.stomped != 0) { // we definitely stomped something
+  if (p->victims.stomped != 0) { // we definitely stomped something
 //    p->victims.stomped = p->board[stomped_sq];
-    const color_t stomped_color = color_of(p->board[stomped_sq]);
-    p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
-    p->board[stomped_sq] = 1;
+    const color_t stomped_color = color_of(p->victims.stomped);
+    p->key ^= zob[p->victims.stomped_sq][p->victims.stomped];   // remove from board
+    p->board[p->victims.stomped_sq] = p->victims.stomped;
     for(int i = 0; i < NUMBER_PAWNS; i++) {
-      if(p->plocs[stomped_color][i] == stomped_sq) {
-        p->plocs[stomped_color][i] = 1;
+      if(p->plocs[stomped_color][i] == 0) { // takes the first removed pawn and sets this location
+        p->plocs[stomped_color][i] = p->victims.stomped_sq; 
       }
     }
-    p->key ^= zob[stomped_sq][p->board[stomped_sq]];
+    p->key ^= zob[p->victims.stomped_sq][p->victims.stomped];
+    // Clear the stomp
+    p->victims.stomped = 0;
+    p->victims.stomped_sq = 0;
   }
 
   // move phase 2 - shooting the laser
   // const square_t victim_sq = fire(p);
 
   if (p->victims.zapped != 0) { // we definitely hit something with laser
-    color_t zapped_color = color_of(p->board[victim_sq]);
-    p->victims.zapped = p->board[victim_sq];
-    p->key ^= zob[victim_sq][p->victims.zapped];   // remove from board
-    p->board[victim_sq] = 0;
-    p->key ^= zob[victim_sq][0];
+    color_t zapped_color = color_of(p->victims.zapped);
+//    p->victims.zapped = p->board[victim_sq];
+    p->key ^= zob[p->victims.victim_sq][p->victims.zapped];   // remove from board
+    p->board[p->victims.victim_sq] = p->victims.zapped;
+    p->key ^= zob[p->victims.victim_sq][0];
     for(int i = 0; i < NUMBER_PAWNS; i++) {
-      if(p->plocs[zapped_color][i] == victim_sq) {
-        p->plocs[zapped_color][i] = 0;
+      if(p->plocs[zapped_color][i] == 0) { // takes the first removed pawn and sets this location
+        p->plocs[zapped_color][i] = p->victims.victim_sq; 
       }
     }
+    // Clear the zapped
+    p->victims.victim_sq = 0;
+    p->victims.zapped = 0; // may not be necessary
   }
-  //assert_pawn_locs(p);
-//  return p->victims;
+  low_level_unmake_move (old, p, mv);
 }
 
 // helper function for do_perft

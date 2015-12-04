@@ -246,7 +246,6 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   next_node.parent = &rootNode;
 
   next_node.position = rootNode.position; // needs to copy key
-
   (&(next_node.position))->history = &rootNode.position;
 
   score_t score;
@@ -303,7 +302,7 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
           return 0;
         }
       }
-      unmake_move();
+      unmake_move(&(rootNode.position), &(next_node.position), mv);
     }
 
   scored:
