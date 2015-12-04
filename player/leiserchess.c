@@ -417,7 +417,7 @@ int main(int argc, char *argv[]) {
   // big enough to support 4000 moves
   char *istr = (char *) malloc(sizeof(char) * 24000);
 
-
+  
   tt_make_hashtable(HASH);   // initial hash table
   fen_to_pos(&gme[ix], "");  // initialize with an actual position
 
@@ -668,7 +668,7 @@ int main(int argc, char *argv[]) {
           use_precomp = true;
           UciBeginSearch(&gme[ix], depth, INF_TIME);
         } else {
-          printf("inc %lf\n", inc);
+          //printf("inc %lf\n", inc);
           use_precomp = inc > 1750; // inc value when running blitz mode is 500 and inc value when running regular mode is 2000. We want regular mode to use precomputation values
           goal = tme * 0.02;   // use about 1/50 of main time
           goal += inc * 0.80;  // use most of increment
