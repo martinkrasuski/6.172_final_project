@@ -246,11 +246,15 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   next_node.parent = &rootNode;
 
   next_node.position = rootNode.position; // needs to copy key
+  (&(next_node.position))->last_move = 0;
   //(&(next_node.position))->history = &rootNode.position;
 
   score_t score;
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+    if ((&(next_node.position))->last_move != 0) {
+      unmake_move(&(rootNode.position), &(next_node.position), (&(next_node.position))->last_move);
+    }
     move_t mv = get_move(move_list[mv_index]);
 
     if (TRACE_MOVES) {
@@ -261,28 +265,23 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
 
     // make the move.
     victims_t x = make_move(&(rootNode.position), &(next_node.position), mv);
-    unmake_move(&(rootNode.position), &(next_node.position), mv);
-    printf("valid");
+//    unmake_move(&(rootNode.position), &(next_node.position), mv);
+//    printf("valid");
     if (is_KO(x)) {
-      unmake_move(&(rootNode.position), &(next_node.position), mv);
       continue;  // not a legal move
     }
 
     if (is_game_over(x, rootNode.pov, rootNode.ply)) {
       score = get_game_over_score(x, rootNode.pov, rootNode.ply);
       next_node.subpv[0] = 0;
-      unmake_move(&(rootNode.position), &(next_node.position), mv);
       goto scored;
     }
 
     if (is_repeated(&(next_node.position), rootNode.ply)) {
       score = get_draw_score(&(next_node.position), rootNode.ply);
       next_node.subpv[0] = 0;
-      unmake_move(&(rootNode.position), &(next_node.position), mv);
       goto scored;
     }
-
-//    unmake_move(&(rootNode.position), &(next_node.position), mv);
 
     if (mv_index == 0 || rootNode.depth == 1) {
       // We guess that the first move is the principle variation

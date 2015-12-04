@@ -246,6 +246,7 @@ void move_to_str(const move_t mv, char *buf, const size_t bufsize) {
   const square_t f = from_square(mv);  // from-square
   const square_t t = to_square(mv);    // to-square
   const rot_t r = rot_of(mv);          // rotation
+
   const char *orig_buf = buf;
 
   buf += square_to_str(f, buf, bufsize);
@@ -729,9 +730,14 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 }
 
 void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
-  square_t from_sq = from_square(mv);
-  square_t to_sq = to_square(mv);
+  square_t from_sq = to_square(mv);
+  square_t to_sq = from_square(mv);
   rot_t rot = rot_of(mv);
+  if (rot == LEFT) {
+    rot = RIGHT;
+  } else if (rot == RIGHT) {
+    rot = LEFT;
+  }
 //  tbassert(false, "Bout to unmake");
 
 //  p->key ^= zob_color;   // swap color to move
@@ -739,8 +745,12 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
 //  piece_t from_piece = p->board[from_sq];
 //  const piece_t to_piece = p->board[to_sq];
   // Reverse these pieces
-  piece_t from_piece = p->board[to_sq];
-  const piece_t to_piece = p->board[from_sq];
+  piece_t from_piece = p->board[from_sq];
+  piece_t to_piece = p->board[to_sq];
+
+  tbassert(p->key == compute_zob_key(p),
+           "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+           p->key, compute_zob_key(p));
 
   if (to_sq != from_sq) {  // move, not rotation
     /*
@@ -785,18 +795,25 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
         }
       }
     }
+    tbassert(p->key == compute_zob_key(p),
+             "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+             p->key, compute_zob_key(p));
   } else {  // rotation
-    // remove from_piece from from_sq in hash
-    p->key ^= zob[from_sq][from_piece];
-    set_ori(&from_piece, rot + ori_of(from_piece));  // rotate from_piece
-    p->board[from_sq] = from_piece;  // place rotated piece on board
-    p->key ^= zob[from_sq][from_piece];              // ... and in hash
+    // remove to_piece from to_sq in hash
+    p->key ^= zob[to_sq][to_piece];
+    set_ori(&to_piece, rot + ori_of(to_piece));  // rotate from_piece
+    p->board[to_sq] = to_piece;  // place rotated piece on board
+    p->key ^= zob[to_sq][to_piece];              // ... and in hash
+
+    tbassert(p->key == compute_zob_key(p),
+             "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+             p->key, compute_zob_key(p));
   }
 
   // Increment ply
 //  p->ply++;
 
-  p->key ^= zob_color;   // swap color to move last
+//  p->key ^= zob_color;   // swap color to move last
 
   tbassert(p->key == compute_zob_key(p),
            "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
@@ -807,7 +824,6 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
 void unmake_move(position_t *old, position_t *p, const move_t mv) {
   
   // move phase 1 - moving a piece, which may result in a stomp
-  // const square_t stomped_sq = low_level_make_move(old, p, mv);
 
   if (p->victims.stomped != 0) { // we definitely stomped something
 //    p->victims.stomped = p->board[stomped_sq];
@@ -824,6 +840,10 @@ void unmake_move(position_t *old, position_t *p, const move_t mv) {
     p->victims.stomped = 0;
     p->victims.stomped_sq = 0;
   }
+
+  tbassert(p->key == compute_zob_key(p),
+           "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+           p->key, compute_zob_key(p));
 
   // move phase 2 - shooting the laser
   // const square_t victim_sq = fire(p);
