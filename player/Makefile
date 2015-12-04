@@ -18,7 +18,7 @@ ifeq ($(UNAME),Darwin)
 else
 	OS_TYPE := Linux
 	#PFLAG := -D_XOPEN_SOURCE
-	CFLAGS := -std=gnu99 -lrt -Wall -g
+	CFLAGS := -std=gnu99 -lrt -Wall -g3
 	LDFLAGS= -Wall -lm -lrt -ldl -lpthread
 endif
 endif
@@ -73,3 +73,7 @@ endif
 clean :
 	rm -f *.o *.d* *~ $(TARGET)
 
+ifeq ($(PROF),1)
+  CFLAGS += -DPROFILE_BUILD -pg
+  LDFLAGS += -pg
+endif
