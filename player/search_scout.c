@@ -9,6 +9,8 @@
 #include "./simple_mutex.h"
 #include <cilk/cilk_api.h>
 
+#define YOUNG_BROTHERS_WAIT 5
+
 // Checks whether a node's parent has aborted.
 //   If this occurs, we should just stop and return 0 immediately.
 bool parallel_parent_aborted(searchNode* node) {
@@ -85,7 +87,7 @@ static score_t scout_search(searchNode *node, const int depth,
   
   // For our parallel code we'll want to iterate over the first few values serially, then go parallel
   // This variable sets how many nodes we'll search serially
-  const int first_iteration_value = num_of_moves >= 5 ? 5 : num_of_moves;
+  // const int first_iteration_value = num_of_moves >= 5 ? 5 : num_of_moves;
 
   int number_of_moves_evaluated = 0;
 
@@ -99,7 +101,10 @@ static score_t scout_search(searchNode *node, const int depth,
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
 
-  for (int mv_index = 0; mv_index < first_iteration_value; mv_index++) {
+  for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+    if (node->legal_move_count > YOUNG_BROTHERS_WAIT) {
+      break;
+    }
     // Get the next move from the move list.
     int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
     // Added this line to use our new incremental_sort implementation, wasn't originally here
@@ -137,12 +142,19 @@ static score_t scout_search(searchNode *node, const int depth,
       break;
     }
   }
-  
-  if (!(node->abort)) {
-  
-  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
-  cilk_for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
+  if (parallel_parent_aborted(node)) {
+    return 0;
+  }
+  
+  // We have not found a cutoff, continue to search parallely
+  if (!(node->abort)) {
+
+  int start_value = number_of_moves_evaluated;
+
+  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
+  
+  cilk_for (int mv_index = start_value; mv_index < num_of_moves; mv_index++) {
     do {
       if (node->abort) continue;
       // Get the next move from the move list.
