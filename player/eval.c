@@ -177,12 +177,11 @@ void mark_laser_path(position_t *p, char *laser_map, const color_t c,
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
 float h_dist(square_t a, square_t b) {
-  //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
-  //  printf("b = %d, FIL(b) = %d, RNK(b) = %d\n", b, FIL(b), RNK(b));
-  int delta_fil = abs(fil_of(a) - fil_of(b));
-  int delta_rnk = abs(rnk_of(a) - rnk_of(b));
+  int delta_fil = fil_of(a) - fil_of(b);
+  delta_fil = delta_fil < 0 ? -(delta_fil) : delta_fil;
+  int delta_rnk = rnk_of(a) - rnk_of(b);
+  delta_rnk = delta_rnk < 0 ? -(delta_rnk) : delta_rnk; 
   float x = (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
-  //  printf("max_dist = %d\n\n", x);
   return x;
 }
 /*
