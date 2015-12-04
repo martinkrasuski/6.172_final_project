@@ -175,6 +175,7 @@ void mark_laser_path(position_t *p, char *laser_map, const color_t c,
 }
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
+// Because we don't want a divide by 0 error, we add one to the dx/dy values
 float h_dist(square_t a, square_t b) {
   int delta_fil = fil_of(a) - fil_of(b);
   delta_fil = delta_fil < 0 ? -(delta_fil) : delta_fil;
@@ -363,7 +364,7 @@ score_t eval(position_t *p, const bool verbose) {
   heuristics_t black_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
   heuristics_t * b_heuristics = &black_heuristics;
   
-  // Calculate the heursitics for the white and black color
+  // Calculate the heurisitics for the white and black color
   mark_laser_path_heuristics(p, BLACK, w_heuristics);
   mark_laser_path_heuristics(p, WHITE, b_heuristics);
 

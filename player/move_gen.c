@@ -60,7 +60,7 @@ void set_color(piece_t *x, const color_t c) {
 }
 
 
-ptype_t ptype_of(const piece_t x) {
+inline ptype_t ptype_of(const piece_t x) {
   return (ptype_t) ((x >> PTYPE_SHIFT) & PTYPE_MASK);
 }
 
@@ -69,7 +69,7 @@ void set_ptype(piece_t *x, ptype_t pt) {
       (*x & ~(PTYPE_MASK << PTYPE_SHIFT));
 }
 
-int8_t ori_of(const piece_t x) {
+inline int8_t ori_of(const piece_t x) {
   return (x >> ORI_SHIFT) & ORI_MASK;
 }
 
