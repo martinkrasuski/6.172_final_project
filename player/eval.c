@@ -107,12 +107,21 @@ ev_score_t kaggressive(const position_t *p, const fil_t f, const rnk_t r) {
   const fil_t of = fil_of(opp_sq);
   const rnk_t _or = (rnk_t) rnk_of(opp_sq);
 
-  const int8_t delta_fil = of - f;
-  const int8_t delta_rnk = _or - r;
+  //const int8_t delta_fil = of - f;
+  //const int8_t delta_rnk = _or - r;
 
   int bonus = 0;
-
-  if (delta_fil >= 0 && delta_rnk >= 0) {
+  if(of >= f) {
+    bonus = f +1;
+  } else {
+    bonus = BOARD_WIDTH - f;
+  }
+  if(_or >= r) {
+    bonus *= (r + 1);
+  } else {
+    bonus *= (BOARD_WIDTH - r);
+  }
+  /*if (delta_fil >= 0 && delta_rnk >= 0) {
     bonus = (f + 1) * (r + 1);
 
   } else if (delta_fil <= 0 && delta_rnk >= 0) {
@@ -121,7 +130,7 @@ ev_score_t kaggressive(const position_t *p, const fil_t f, const rnk_t r) {
     bonus = (BOARD_WIDTH - f) * (BOARD_WIDTH - r);
   } else if (delta_fil >= 0 && delta_rnk <= 0) {
     bonus = (f + 1) * (BOARD_WIDTH - r);
-  }
+    }*/
 
   return (KAGGRESSIVE * bonus) / (BOARD_WIDTH * BOARD_WIDTH);
 }
