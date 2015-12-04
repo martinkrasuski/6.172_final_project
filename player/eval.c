@@ -48,7 +48,7 @@ ev_score_t pcentral(const fil_t f, const rnk_t r) {
 
 
 // returns true if c lies on or between a and b, which are not ordered
-inline bool between(const int c, const int a, const int b) {
+bool between(const int c, const int a, const int b) {
   return ((c >= a) && (c <= b)) || ((c <= a) && (c >= b));
 }
 

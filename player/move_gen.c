@@ -505,9 +505,9 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
       }
     });
 
-  //*p = *old; // needs to copy key
+//  *p = *old; // needs to copy key
 
-  //p->history = old;
+  p->history = old; // TODO may not need
   p->last_move = mv;
 
   tbassert(from_sq < ARR_SIZE && from_sq > 0, "from_sq: %d\n", from_sq);
@@ -732,6 +732,7 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
   square_t from_sq = from_square(mv);
   square_t to_sq = to_square(mv);
   rot_t rot = rot_of(mv);
+//  tbassert(false, "Bout to unmake");
 
 //  p->key ^= zob_color;   // swap color to move
 
@@ -797,6 +798,10 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
 
   p->key ^= zob_color;   // swap color to move last
 
+  tbassert(p->key == compute_zob_key(p),
+           "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+           p->key, compute_zob_key(p));
+
 }
 
 void unmake_move(position_t *old, position_t *p, const move_t mv) {
@@ -838,6 +843,11 @@ void unmake_move(position_t *old, position_t *p, const move_t mv) {
     p->victims.victim_sq = 0;
     p->victims.zapped = 0; // may not be necessary
   }
+
+  tbassert(p->key == compute_zob_key(p),
+           "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+           p->key, compute_zob_key(p));
+
   low_level_unmake_move (old, p, mv);
 }
 

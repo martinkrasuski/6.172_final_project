@@ -7,7 +7,7 @@
 
 #include "./tbassert.h"
 #include "./simple_mutex.h"
-#include <cilk/cilk_api.h>
+//#include <cilk/cilk_api.h>
 
 // Checks whether a node's parent has aborted.
 //   If this occurs, we should just stop and return 0 immediately.
@@ -49,7 +49,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-  __cilkrts_set_param("nworkers","8");
+//  __cilkrts_set_param("nworkers","8");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -142,7 +142,7 @@ static score_t scout_search(searchNode *node, const int depth,
   
   sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
-  cilk_for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
+  for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
     do {
       if (node->abort) continue;
       // Get the next move from the move list.

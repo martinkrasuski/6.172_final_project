@@ -147,7 +147,7 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     // Incrementally sort the move list.
     sort_incremental_new(move_list, num_of_moves, mv_index);
 
-    tbassert(false, "stopped\n");
+//   tbassert(false, "stopped\n");
     move_t mv = get_move(move_list[mv_index]);
 
     num_moves_tried++;
@@ -246,7 +246,7 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   next_node.parent = &rootNode;
 
   next_node.position = rootNode.position; // needs to copy key
-  (&(next_node.position))->history = &rootNode.position;
+  //(&(next_node.position))->history = &rootNode.position;
 
   score_t score;
 
@@ -261,34 +261,38 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
 
     // make the move.
     victims_t x = make_move(&(rootNode.position), &(next_node.position), mv);
-
+    unmake_move(&(rootNode.position), &(next_node.position), mv);
+    printf("valid");
     if (is_KO(x)) {
+      unmake_move(&(rootNode.position), &(next_node.position), mv);
       continue;  // not a legal move
     }
 
     if (is_game_over(x, rootNode.pov, rootNode.ply)) {
       score = get_game_over_score(x, rootNode.pov, rootNode.ply);
       next_node.subpv[0] = 0;
+      unmake_move(&(rootNode.position), &(next_node.position), mv);
       goto scored;
     }
 
     if (is_repeated(&(next_node.position), rootNode.ply)) {
       score = get_draw_score(&(next_node.position), rootNode.ply);
       next_node.subpv[0] = 0;
+      unmake_move(&(rootNode.position), &(next_node.position), mv);
       goto scored;
     }
+
+//    unmake_move(&(rootNode.position), &(next_node.position), mv);
 
     if (mv_index == 0 || rootNode.depth == 1) {
       // We guess that the first move is the principle variation
       score = -searchPV(&next_node, rootNode.depth-1, node_count_serial);
-
       // Check if we should abort due to time control.
       if (abortf) {
         return 0;
       }
     } else {
       score = -scout_search(&next_node, rootNode.depth-1, node_count_serial);
-
       // Check if we should abort due to time control.
       if (abortf) {
         return 0;
@@ -302,10 +306,11 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
           return 0;
         }
       }
-      unmake_move(&(rootNode.position), &(next_node.position), mv);
+
     }
 
   scored:
+
     // only valid for the root node:
     tbassert((score > rootNode.best_score) == (score > rootNode.alpha),
              "score = %d, best = %d, alpha = %d\n", score, rootNode.best_score, rootNode.alpha);
