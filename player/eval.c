@@ -49,8 +49,7 @@ ev_score_t pcentral(const fil_t f, const rnk_t r) {
 
 // returns true if c lies on or between a and b, which are not ordered
 bool between(const int c, const int a, const int b) {
-  bool x = ((c >= a) && (c <= b)) || ((c <= a) && (c >= b));
-  return x;
+  return ((c >= a) && (c <= b)) || ((c <= a) && (c >= b));
 }
 
 // PBETWEEN heuristic: Bonus for Pawn at (f, r) in rectangle defined by Kings at the corners
@@ -176,6 +175,7 @@ void mark_laser_path(position_t *p, char *laser_map, const color_t c,
 }
 
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
+// Because we don't want a divide by 0 error, we add one to the dx/dy values
 float h_dist(square_t a, square_t b) {
   //  printf("a = %d, FIL(a) = %d, RNK(a) = %d\n", a, FIL(a), RNK(a));
   //  printf("b = %d, FIL(b) = %d, RNK(b) = %d\n", b, FIL(b), RNK(b));
@@ -365,7 +365,7 @@ score_t eval(position_t *p, const bool verbose) {
   heuristics_t black_heuristics = { .pawnpin = 0, .h_attackable = 0, .mobility = 9};
   heuristics_t * b_heuristics = &black_heuristics;
   
-  // Calculate the heursitics for the white and black color
+  // Calculate the heurisitics for the white and black color
   mark_laser_path_heuristics(p, BLACK, w_heuristics);
   mark_laser_path_heuristics(p, WHITE, b_heuristics);
 

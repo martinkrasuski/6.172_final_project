@@ -75,6 +75,7 @@ square_t square_of(fil_t f, rnk_t r) {
   return s;
 }
 
+// Using our valid square_of method, generate a table that precomputes these values
 void generate_square_table() {
   FILE *fp = fopen("square_of_table.c", "wb");
   int x;
@@ -94,6 +95,7 @@ void generate_square_table() {
   fprintf(fp, "};");
 };
 
+// Using our valid h_dist method, generate a file that is formatted as a precomputed table for these values
 void generate_h_dist_table() {
   FILE *fp = fopen("h_dist_table.c", "wb");
   int x;
@@ -110,6 +112,7 @@ void generate_h_dist_table() {
   fclose(fp);
 };
 
+// Using our valid fil_of method, generate a file that is formatted as a precomputed table for these values
 void generate_fil_table(){
   FILE *fp = fopen("fil_table.c", "wb");
   int x;
@@ -128,6 +131,7 @@ void generate_fil_table(){
   fclose(fp);
 };
 
+// Using our valid rnk_of method, generate a file that is formatted as a precomputed table for these values
 void generate_rnk_table() {
   FILE *fp = fopen("rnk_table.c", "wb");
   int x;
@@ -156,6 +160,7 @@ double pcentral(fil_t f, rnk_t r) {
   return bonus;
 }
 
+// Using our valid pcentral method, generate a file that is formatted as a precomputed table for these values
 void generate_pcentral(){
   FILE *fp = fopen("pcentral_table.c", "wb");
   int x;
