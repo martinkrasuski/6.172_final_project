@@ -265,7 +265,6 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   result.next_node.position = node->position;
   victims_t victims = make_move(&(node->position), &(result.next_node.position),
                                 mv);
-//  unmake_move(&(node->position), &(result.next_node.position), mv);
 
   // Check whether this move changes the board state.
   //   such moves are not legal.

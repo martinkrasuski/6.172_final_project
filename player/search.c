@@ -265,8 +265,6 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
 
     // make the move.
     victims_t x = make_move(&(rootNode.position), &(next_node.position), mv);
-//    unmake_move(&(rootNode.position), &(next_node.position), mv);
-//    printf("valid");
     if (is_KO(x)) {
       continue;  // not a legal move
     }

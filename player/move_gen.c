@@ -892,6 +892,7 @@ static uint64_t perft_search(position_t *p, const int depth, const int ply) {
   for (i = 0; i < num_moves; i++) {
     move_t mv = get_move(lst[i]);
 
+    np = *p; // needs to copy key 
     const square_t stomped_sq = low_level_make_move(p, &np, mv);  // make the move baby!
 
     if (stomped_sq != 0) {
