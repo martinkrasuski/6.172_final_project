@@ -738,12 +738,9 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
   } else if (rot == RIGHT) {
     rot = LEFT;
   }
-//  tbassert(false, "Bout to unmake");
 
 //  p->key ^= zob_color;   // swap color to move
 
-//  piece_t from_piece = p->board[from_sq];
-//  const piece_t to_piece = p->board[to_sq];
   // Reverse these pieces
   piece_t from_piece = p->board[from_sq];
   piece_t to_piece = p->board[to_sq];
@@ -813,7 +810,7 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
   // Increment ply
 //  p->ply++;
 
-//  p->key ^= zob_color;   // swap color to move last
+  p->key ^= zob_color;   // swap color to move last
 
   tbassert(p->key == compute_zob_key(p),
            "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
