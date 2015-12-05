@@ -111,9 +111,6 @@ ev_score_t kaggressive(const position_t *p, const fil_t f, const rnk_t r) {
   const fil_t of = fil_of(opp_sq);
   const rnk_t _or = (rnk_t) rnk_of(opp_sq);
 
-  //const int8_t delta_fil = of - f;
-  //const int8_t delta_rnk = _or - r;
-
   int bonus = 0;
   if(of >= f) {
     bonus = f +1;
@@ -125,16 +122,6 @@ ev_score_t kaggressive(const position_t *p, const fil_t f, const rnk_t r) {
   } else {
     bonus *= (BOARD_WIDTH - r);
   }
-  /*if (delta_fil >= 0 && delta_rnk >= 0) {
-    bonus = (f + 1) * (r + 1);
-
-  } else if (delta_fil <= 0 && delta_rnk >= 0) {
-    bonus = (BOARD_WIDTH - f) * (r + 1);
-  } else if (delta_fil <= 0 && delta_rnk <= 0) {
-    bonus = (BOARD_WIDTH - f) * (BOARD_WIDTH - r);
-  } else if (delta_fil >= 0 && delta_rnk <= 0) {
-    bonus = (f + 1) * (BOARD_WIDTH - r);
-    }*/
 
   return (KAGGRESSIVE * bonus) / (BOARD_WIDTH * BOARD_WIDTH);
 }
@@ -196,12 +183,6 @@ float h_dist(square_t a, square_t b) {
     delta_rnk = delta_rnk < 0 ? -(delta_rnk) : delta_rnk; 
     return (1.0 / (delta_fil + 1)) + (1.0 / (delta_rnk + 1));
 }
-/*
-// Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
-float h_dist(const square_t a, const square_t b) {
-  return h_dist_table[a][b];
-}
-*/
 
 // Marks the path of the laser until it hits a piece or goes off the board.
 //
