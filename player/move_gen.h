@@ -122,7 +122,7 @@ typedef enum {
 typedef struct victims_t {
   piece_t stomped;
   piece_t zapped;
-  square_t stomped_sq;
+//  square_t stomped_sq;
   square_t victim_sq;
 } victims_t;
 

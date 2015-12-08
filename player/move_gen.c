@@ -661,7 +661,7 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   } else {  // we definitely stomped something
     p->victims.stomped = p->board[stomped_sq];
-    p->victims.stomped_sq = stomped_sq;
+    //p->victims.stomped_sq = stomped_sq;
 
     const color_t stomped_color = color_of(p->board[stomped_sq]);
     p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
@@ -834,22 +834,24 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
 
 void unmake_move(position_t *old, position_t *p, const move_t mv) {
   
+  square_t stomped_sq = to_square(mv);
+
   // move phase 1 - moving a piece, which may result in a stomp
 
   if (p->victims.stomped != 0) { // we definitely stomped something
 //    p->victims.stomped = p->board[stomped_sq];
     const color_t stomped_color = color_of(p->victims.stomped);
-    p->key ^= zob[p->victims.stomped_sq][p->victims.stomped];   // remove from board
-    p->board[p->victims.stomped_sq] = p->victims.stomped;
+    p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
+    p->board[stomped_sq] = p->victims.stomped;
     for(int i = 0; i < NUMBER_PAWNS; i++) {
       if(p->plocs[stomped_color][i] == 0) { // takes the first removed pawn and sets this location
-        p->plocs[stomped_color][i] = p->victims.stomped_sq; 
+        p->plocs[stomped_color][i] = stomped_sq; 
       }
     }
-    p->key ^= zob[p->victims.stomped_sq][p->victims.stomped];
+    p->key ^= zob[stomped_sq][p->victims.stomped];
     // Clear the stomp
     p->victims.stomped = old->victims.stomped;
-    p->victims.stomped_sq = old->victims.stomped_sq;
+    //p->victims.stomped_sq = old->victims.stomped_sq;
   }
 
   tbassert(p->key == compute_zob_key(p),
