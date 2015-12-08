@@ -347,7 +347,6 @@ int old_generate_all(position_t *p, sortable_move_t *sortable_move_list,
             sortable_move_list[move_count++] = move_of(typ, (rot_t) rot, sq, sq);
           }
           if (typ == KING) {  // Also generate null move
-            //printf("type is KING\n");
             tbassert(move_count < MAX_NUM_MOVES, "move_count: %d\n", move_count);
             sortable_move_list[move_count++] = move_of(typ, (rot_t) 0, sq, sq);
           }

@@ -7,7 +7,9 @@
 
 #include "./tbassert.h"
 #include "./simple_mutex.h"
-//#include <cilk/cilk_api.h>
+ #include <cilk/cilk_api.h>
+
+#define YOUNG_BROTHERS_WAIT 5
 
 // Checks whether a node's parent has aborted.
 //   If this occurs, we should just stop and return 0 immediately.
@@ -49,7 +51,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-//  __cilkrts_set_param("nworkers","8");
+  __cilkrts_set_param("nworkers","1");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -85,7 +87,7 @@ static score_t scout_search(searchNode *node, const int depth,
   
   // For our parallel code we'll want to iterate over the first few values serially, then go parallel
   // This variable sets how many nodes we'll search serially
-  const int first_iteration_value = num_of_moves >= 5 ? 5 : num_of_moves;
+  // const int first_iteration_value = num_of_moves >= 5 ? 5 : num_of_moves;
 
   int number_of_moves_evaluated = 0;
 
@@ -102,20 +104,24 @@ static score_t scout_search(searchNode *node, const int depth,
 //  result.next_node.position = node.position; // needs to copy key
 //  (&(result.next_node.position))->history = &node.position;
 
-  moveEvaluationResult result;
+/*  moveEvaluationResult result;
   result.next_node.subpv[0] = 0;
   result.next_node.parent = node;
 
   result.next_node.position = node->position;
   (&(result.next_node.position))->history = &(node->position);
-
+*/
   // Make the move, and get any victim pieces.
   //result.next_node.position = node->position;
   //(&(result.next_node.position))->history = &node->position;
   //victims_t victims = make_move(&(node->position), &(result.next_node.position),
     //                            mv);
 
-  for (int mv_index = 0; mv_index < first_iteration_value; mv_index++) {
+  for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
+    // We have searched as many serial nodes as we need to. Break and start searching parallely
+    if (node->legal_move_count > YOUNG_BROTHERS_WAIT) {
+      break;
+    }
     // Get the next move from the move list.
     int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
     // Added this line to use our new incremental_sort implementation, wasn't originally here
@@ -129,14 +135,14 @@ static score_t scout_search(searchNode *node, const int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
-    if (mv_index > 0) {
-      unmake_move(&(node->position), &(result.next_node.position), mv);
-    }
+//    if (mv_index > 0) {
+//      unmake_move(&(node->position), &(result.next_node.position), mv);
+//    }
 
-    result = evaluateMove(node, mv, killer_a, killer_b,
+    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
                                                SEARCH_SCOUT,
-                                               node_count_serial,
-                                               result);
+                                               node_count_serial);
+                                               //result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -158,19 +164,26 @@ static score_t scout_search(searchNode *node, const int depth,
       break;
     }
   }
-  
-  if (!(node->abort)) {
-  
-  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
+  if (parallel_parent_aborted(node)) {
+    return 0;
+  }
+  
+  // We have not found a cutoff, continue to search parallely
+  if (!(node->abort)) {
+/*
   moveEvaluationResult result;
   result.next_node.subpv[0] = 0;
   result.next_node.parent = node;
 
   result.next_node.position = node->position;
   (&(result.next_node.position))->history = &(node->position);
+*/
+  int start_value = number_of_moves_evaluated;
 
-  for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
+  sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
+  
+  cilk_for (int mv_index = start_value; mv_index < num_of_moves; mv_index++) {
     do {
       if (node->abort) continue;
       // Get the next move from the move list.
@@ -193,14 +206,14 @@ static score_t scout_search(searchNode *node, const int depth,
       result.next_node.position = node->position;
       (&(result.next_node.position))->history = &(node->position);
 */
-      if (mv_index > first_iteration_value) {
-        unmake_move(&(node->position), &(result.next_node.position), mv);
-      }
+     // if (mv_index > start_value) {
+     //   unmake_move(&(node->position), &(result.next_node.position), mv);
+     // }
 
-      result = evaluateMove(node, mv, killer_a, killer_b,
+      moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
                             SEARCH_SCOUT,
-                            node_count_serial,
-                            result);
+                            node_count_serial);
+                       //     result);
 
       if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
           || abortf || parallel_parent_aborted(node)) {

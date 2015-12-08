@@ -11,6 +11,6 @@
 
 // ev_score_t values
 #define PAWN_EV_VALUE (PAWN_VALUE*EV_SCORE_RATIO)
-
+bool use_precomp;
 score_t eval(position_t *p, bool verbose);
 #endif  // EVAL_H

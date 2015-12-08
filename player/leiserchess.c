@@ -225,7 +225,6 @@ void *entry_point(void *arg) {
 // Makes call to entry_point -> make call to searchRoot -> searchRoot in search.c
 void UciBeginSearch(position_t *p, int depth, double tme) {
   pthread_mutex_lock(&entry_mutex);  // setup for the barrier
-
   entry_point_args args;
   args.depth = depth;
   args.p = p;
@@ -419,7 +418,7 @@ int main(int argc, char *argv[]) {
   // big enough to support 4000 moves
   char *istr = (char *) malloc(sizeof(char) * 24000);
 
-
+  
   tt_make_hashtable(HASH);   // initial hash table
   fen_to_pos(&gme[ix], "");  // initialize with an actual position
 
@@ -669,6 +668,7 @@ int main(int argc, char *argv[]) {
         if (depth < INF_DEPTH) {
           UciBeginSearch(&gme[ix], depth, INF_TIME);
         } else {
+          //          use_precomp = inc > 1750; // inc value when running blitz mode is 500 and inc value when running regular mode is 2000. We want regular mode to use precomputation values
           goal = tme * 0.02;   // use about 1/50 of main time
           goal += inc * 0.80;  // use most of increment
           // sanity check,  make sure that we don't run ourselves too low
