@@ -259,9 +259,6 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
 
-  result->next_node.subpv[0] = 0;
-  result->next_node.parent = node;
-
   // Make the move, and get any victim pieces.
   victims_t victims = make_move(&(node->position), &(result->next_node.position),
                                 mv);
@@ -303,8 +300,8 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
 
   // Check whether we caused our own piece to be zapped. This isn't considered
   //   a blunder if we also managed to stomp an enemy piece in the process.
-  if (victims->stomped == 0 &&
-      victims->zapped > 0 &&
+  if (victims.stomped == 0 &&
+      victims.zapped > 0 &&
       color_of(victims.zapped) == node->fake_color_to_move) {
     blunder = true;
   }

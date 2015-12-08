@@ -120,6 +120,10 @@ static score_t scout_search(searchNode *node, const int depth,
     __sync_fetch_and_add(node_count_serial, 1);
 
     moveEvaluationResult result;
+
+    result.next_node.subpv[0] = 0;
+    result.next_node.parent = node;
+
     evaluateMove(node, mv, killer_a, killer_b, SEARCH_SCOUT, node_count_serial, &result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
@@ -171,6 +175,10 @@ static score_t scout_search(searchNode *node, const int depth,
       __sync_fetch_and_add(node_count_serial, 1);
 
       moveEvaluationResult result;
+
+      result.next_node.subpv[0] = 0;
+      result.next_node.parent = node;
+
       evaluateMove(node, mv, killer_a, killer_b, SEARCH_SCOUT, node_count_serial, &result);
 
       if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
