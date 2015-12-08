@@ -51,7 +51,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-  __cilkrts_set_param("nworkers","8");
+  __cilkrts_set_param("nworkers","1");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -101,6 +101,13 @@ static score_t scout_search(searchNode *node, const int depth,
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
 
+  moveEvaluationResult result;
+  result.next_node.subpv[0] = 0;
+  result.next_node.parent = node;
+
+  result.next_node.position = node->position;
+  (&(result.next_node.position))->history = &node->position;
+
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // We have searched as many serial nodes as we need to. Break and start searching parallely
     if (node->legal_move_count > YOUNG_BROTHERS_WAIT) {
@@ -119,13 +126,16 @@ static score_t scout_search(searchNode *node, const int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
-//    if (mv_index > 0) {
-//      unmake_move(&(node->position), &(result.next_node.position), mv);
-//    }
+//    moveEvaluationResult result;
+//    result.next_node.subpv[0] = 0;
+//    result.next_node.parent = node;
 
-    moveEvaluationResult result;
-    result.next_node.subpv[0] = 0;
-    result.next_node.parent = node;
+    result.next_node.position = node->position;
+    (&(result.next_node.position))->history = &node->position;
+
+//    if (mv_index > 0) {
+//      unmake_move(&(node->position), &(result.next_node.position), (&(result.next_node.position))->last_move);
+//    }
 
     evaluateMove(node, mv, killer_a, killer_b,
                  SEARCH_SCOUT,
@@ -191,12 +201,12 @@ static score_t scout_search(searchNode *node, const int depth,
       result.next_node.subpv[0] = 0;
       result.next_node.parent = node;
 
-//      result.next_node.position = node->position;
-//      (&(result.next_node.position))->history = &(node->position);
 
      // if (mv_index > start_value) {
      //   unmake_move(&(node->position), &(result.next_node.position), mv);
      // }
+      result.next_node.position = node->position;
+      (&(result.next_node.position))->history = &node->position;
 
       evaluateMove(node, mv, killer_a, killer_b,
                             SEARCH_SCOUT,

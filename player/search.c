@@ -142,31 +142,30 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
   int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
   int num_moves_tried = 0;
 
-//  moveEvaluationResult result;
-//  result.next_node.subpv[0] = 0;
-//  result.next_node.parent = node;
+  moveEvaluationResult result;
+  result.next_node.subpv[0] = 0;
+  result.next_node.parent = node;
   
-//   result.next_node.position = node->position;
-//  (&(result.next_node.position))->history = &(node->position);
+   result.next_node.position = node->position;
+  (&(result.next_node.position))->history = &(node->position);
 
   // Start searching moves.
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // Incrementally sort the move list.
     sort_incremental_new(move_list, num_of_moves, mv_index);
 
-//   tbassert(false, "stopped\n");
     move_t mv = get_move(move_list[mv_index]);
 
     num_moves_tried++;
     (*node_count_serial)++;
 
-//    if (mv_index > 0) {
-//      unmake_move(&(node->position), &(result.next_node.position), mv);
-//    }
-    moveEvaluationResult result;
-    result.next_node.subpv[0] = 0;
-    result.next_node.parent = node;
-    
+    if (mv_index > 0) {
+      unmake_move(&(node->position), &(result.next_node.position), (&(result.next_node.position))->last_move);
+    }
+
+//    result.next_node.position = node->position;
+//    (&(result.next_node.position))->history = &node->position;
+ 
     evaluateMove(node, mv, killer_a, killer_b,
                  SEARCH_PV,
                  node_count_serial,
@@ -267,9 +266,10 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   score_t score;
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
-    if (mv_index > 0) {
-      unmake_move(&(rootNode.position), &(next_node.position), (&(next_node.position))->last_move);
-    }
+
+//    if (mv_index > 0) {
+//      unmake_move(&(rootNode.position), &(next_node.position), (&(next_node.position))->last_move);
+//    }
     move_t mv = get_move(move_list[mv_index]);
 
     if (TRACE_MOVES) {
@@ -277,7 +277,7 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
     }
 
     (*node_count_serial)++;
-//    next_node.position = rootNode.position;
+    next_node.position = rootNode.position;
     // make the move.
     //next_node.position = rootNode.position;
     victims_t x = make_move(&(rootNode.position), &(next_node.position), mv);
