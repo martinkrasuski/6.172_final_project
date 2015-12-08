@@ -51,7 +51,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-  __cilkrts_set_param("nworkers","1");
+  __cilkrts_set_param("nworkers","8");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -123,10 +123,14 @@ static score_t scout_search(searchNode *node, const int depth,
 //      unmake_move(&(node->position), &(result.next_node.position), mv);
 //    }
 
-    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_SCOUT,
-                                               node_count_serial);
-                                               //result);
+    moveEvaluationResult result;
+    result.next_node.subpv[0] = 0;
+    result.next_node.parent = node;
+
+    evaluateMove(node, mv, killer_a, killer_b,
+                 SEARCH_SCOUT,
+                 node_count_serial,
+                 &result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -183,21 +187,21 @@ static score_t scout_search(searchNode *node, const int depth,
       // increase node count
       __sync_fetch_and_add(node_count_serial, 1);
 
-/*      moveEvaluationResult result;
+      moveEvaluationResult result;
       result.next_node.subpv[0] = 0;
       result.next_node.parent = node;
 
-      result.next_node.position = node->position;
-      (&(result.next_node.position))->history = &(node->position);
-*/
+//      result.next_node.position = node->position;
+//      (&(result.next_node.position))->history = &(node->position);
+
      // if (mv_index > start_value) {
      //   unmake_move(&(node->position), &(result.next_node.position), mv);
      // }
 
-      moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
+      evaluateMove(node, mv, killer_a, killer_b,
                             SEARCH_SCOUT,
-                            node_count_serial);
-                       //     result);
+                            node_count_serial,
+                            &result);
 
       if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
           || abortf || parallel_parent_aborted(node)) {

@@ -141,14 +141,14 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
   sortable_move_t move_list[MAX_NUM_MOVES];
   int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
   int num_moves_tried = 0;
-/*
-  moveEvaluationResult result;
-  result.next_node.subpv[0] = 0;
-  result.next_node.parent = node;
+
+//  moveEvaluationResult result;
+//  result.next_node.subpv[0] = 0;
+//  result.next_node.parent = node;
   
-   result.next_node.position = node->position;
-  (&(result.next_node.position))->history = &(node->position);
-*/
+//   result.next_node.position = node->position;
+//  (&(result.next_node.position))->history = &(node->position);
+
   // Start searching moves.
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // Incrementally sort the move list.
@@ -163,11 +163,14 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
 //    if (mv_index > 0) {
 //      unmake_move(&(node->position), &(result.next_node.position), mv);
 //    }
-
-    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_PV,
-                                               node_count_serial);
-              //                                 result);
+    moveEvaluationResult result;
+    result.next_node.subpv[0] = 0;
+    result.next_node.parent = node;
+    
+    evaluateMove(node, mv, killer_a, killer_b,
+                 SEARCH_PV,
+                 node_count_serial,
+                 &result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE) {
       continue;
