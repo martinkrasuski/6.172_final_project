@@ -102,12 +102,12 @@ static score_t scout_search(searchNode *node, const int depth,
 //  result.next_node.position = node.position; // needs to copy key
 //  (&(result.next_node.position))->history = &node.position;
 
-//  moveEvaluationResult result;
-//  result.next_node.subpv[0] = 0;
-//  result.next_node.parent = node;
+  moveEvaluationResult result;
+  result.next_node.subpv[0] = 0;
+  result.next_node.parent = node;
 
-//  result.next_node.position = node->position;
-//  (&(result.next_node.position))->history = &(node->position);
+  result.next_node.position = node->position;
+  (&(result.next_node.position))->history = &(node->position);
 
   // Make the move, and get any victim pieces.
   //result.next_node.position = node->position;
@@ -129,14 +129,14 @@ static score_t scout_search(searchNode *node, const int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
-//    if (mv_index > 0) {
-//      unmake_move(&(node->position), &(result.next_node.position), mv);
-//    }
+    if (mv_index > 0) {
+      unmake_move(&(node->position), &(result.next_node.position), mv);
+    }
 
-    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
+    result = evaluateMove(node, mv, killer_a, killer_b,
                                                SEARCH_SCOUT,
-                                               node_count_serial);//,
-                                  //             result);
+                                               node_count_serial,
+                                               result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -163,6 +163,13 @@ static score_t scout_search(searchNode *node, const int depth,
   
   sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
 
+  moveEvaluationResult result;
+  result.next_node.subpv[0] = 0;
+  result.next_node.parent = node;
+
+  result.next_node.position = node->position;
+  (&(result.next_node.position))->history = &(node->position);
+
   for (int mv_index = first_iteration_value; mv_index < num_of_moves; mv_index++) {
     do {
       if (node->abort) continue;
@@ -179,17 +186,21 @@ static score_t scout_search(searchNode *node, const int depth,
       // increase node count
       __sync_fetch_and_add(node_count_serial, 1);
 
-      moveEvaluationResult result;
+/*      moveEvaluationResult result;
       result.next_node.subpv[0] = 0;
       result.next_node.parent = node;
 
       result.next_node.position = node->position;
       (&(result.next_node.position))->history = &(node->position);
+*/
+      if (mv_index > first_iteration_value) {
+        unmake_move(&(node->position), &(result.next_node.position), mv);
+      }
 
       result = evaluateMove(node, mv, killer_a, killer_b,
                             SEARCH_SCOUT,
-                            node_count_serial);//,
-                            //result);
+                            node_count_serial,
+                            result);
 
       if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
           || abortf || parallel_parent_aborted(node)) {
