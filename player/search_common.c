@@ -254,7 +254,8 @@ leafEvalResult evaluate_as_leaf(searchNode *node, searchType_t type) {
 // Evaluate the move by performing a search.
 moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   move_t killer_b, searchType_t type,
-                                  uint64_t *node_count_serial) {
+                                  uint64_t *node_count_serial)  {//,
+                            //      moveEvaluationResult result) {
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
   moveEvaluationResult result;
@@ -263,6 +264,7 @@ moveEvaluationResult evaluateMove(searchNode *node, move_t mv, move_t killer_a,
 
   // Make the move, and get any victim pieces.
   result.next_node.position = node->position;
+  (&(result.next_node.position))->history = &node->position;
   victims_t victims = make_move(&(node->position), &(result.next_node.position),
                                 mv);
 

@@ -151,6 +151,7 @@ victims_t make_from_string(position_t *old, position_t *p,
     }
   }
   p = old;
+  p->history = old;
   return (mv == 0) ? ILLEGAL() : make_move(old, p, mv);
 }
 

@@ -99,6 +99,22 @@ static score_t scout_search(searchNode *node, const int depth,
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
 
+//  result.next_node.position = node.position; // needs to copy key
+//  (&(result.next_node.position))->history = &node.position;
+
+//  moveEvaluationResult result;
+//  result.next_node.subpv[0] = 0;
+//  result.next_node.parent = node;
+
+//  result.next_node.position = node->position;
+//  (&(result.next_node.position))->history = &(node->position);
+
+  // Make the move, and get any victim pieces.
+  //result.next_node.position = node->position;
+  //(&(result.next_node.position))->history = &node->position;
+  //victims_t victims = make_move(&(node->position), &(result.next_node.position),
+    //                            mv);
+
   for (int mv_index = 0; mv_index < first_iteration_value; mv_index++) {
     // Get the next move from the move list.
     int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
@@ -113,9 +129,14 @@ static score_t scout_search(searchNode *node, const int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
+//    if (mv_index > 0) {
+//      unmake_move(&(node->position), &(result.next_node.position), mv);
+//    }
+
     moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
                                                SEARCH_SCOUT,
-                                               node_count_serial);
+                                               node_count_serial);//,
+                                  //             result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -158,9 +179,17 @@ static score_t scout_search(searchNode *node, const int depth,
       // increase node count
       __sync_fetch_and_add(node_count_serial, 1);
 
-      moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_SCOUT,
-                                               node_count_serial);
+      moveEvaluationResult result;
+      result.next_node.subpv[0] = 0;
+      result.next_node.parent = node;
+
+      result.next_node.position = node->position;
+      (&(result.next_node.position))->history = &(node->position);
+
+      result = evaluateMove(node, mv, killer_a, killer_b,
+                            SEARCH_SCOUT,
+                            node_count_serial);//,
+                            //result);
 
       if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
           || abortf || parallel_parent_aborted(node)) {

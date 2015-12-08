@@ -508,7 +508,7 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
 
 //  *p = *old; // needs to copy key
 
-  p->history = old; // TODO may not need
+//  p->history = old; // TODO may not need
   p->last_move = mv;
 
   tbassert(from_sq < ARR_SIZE && from_sq > 0, "from_sq: %d\n", from_sq);
@@ -739,15 +739,30 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
     rot = LEFT;
   }
 
+  // Pieces block each other, unless a pawn is stomping an enemy pawn
+  tbassert(EMPTY == ptype_of(to_piece) ||
+           from_sq == to_sq ||
+           (PAWN == ptype_of(from_piece) &&
+            PAWN == ptype_of(to_piece) &&
+            color_of(to_piece) == opp_color(color_of(from_piece))),
+           "from-type: %d, to-type: %d, from-sq: %d, to-sq: %d, from-color: %d, to-color: %d\n",
+           ptype_of(from_piece), ptype_of(to_piece),
+           from_sq, to_sq,
+           color_of(from_piece), color_of(to_piece));
+
+  tbassert(p->key == compute_zob_key(p),
+           "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+           p->key, compute_zob_key(p));
+
 //  p->key ^= zob_color;   // swap color to move
 
   // Reverse these pieces
   piece_t from_piece = p->board[from_sq];
   piece_t to_piece = p->board[to_sq];
 
-  tbassert(p->key == compute_zob_key(p),
-           "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
-           p->key, compute_zob_key(p));
+//  tbassert(p->key == compute_zob_key(p),
+//           "p->key: %"PRIu64", zob-key: %"PRIu64"\n",
+//           p->key, compute_zob_key(p));
 
   if (to_sq != from_sq) {  // move, not rotation
     /*
@@ -808,7 +823,7 @@ void low_level_unmake_move (position_t *old, position_t *p, const move_t mv) {
   }
 
   // Increment ply
-//  p->ply++;
+  p->ply--;
 
   p->key ^= zob_color;   // swap color to move last
 
@@ -834,8 +849,8 @@ void unmake_move(position_t *old, position_t *p, const move_t mv) {
     }
     p->key ^= zob[p->victims.stomped_sq][p->victims.stomped];
     // Clear the stomp
-    p->victims.stomped = 0;
-    p->victims.stomped_sq = 0;
+    p->victims.stomped = old->victims.stomped;
+    p->victims.stomped_sq = old->victims.stomped_sq;
   }
 
   tbassert(p->key == compute_zob_key(p),
@@ -857,8 +872,8 @@ void unmake_move(position_t *old, position_t *p, const move_t mv) {
       }
     }
     // Clear the zapped
-    p->victims.victim_sq = 0;
-    p->victims.zapped = 0; // may not be necessary
+    p->victims.victim_sq = old->victims.victim_sq;
+    p->victims.zapped = old->victims.zapped; // may not be necessary
   }
 
   tbassert(p->key == compute_zob_key(p),
