@@ -96,26 +96,10 @@ static score_t scout_search(searchNode *node, const int depth,
   init_simple_mutex(&node_mutex);
 
   // Sort the move list.
-  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
+//  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
   
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
-
-//  result.next_node.position = node.position; // needs to copy key
-//  (&(result.next_node.position))->history = &node.position;
-
-/*  moveEvaluationResult result;
-  result.next_node.subpv[0] = 0;
-  result.next_node.parent = node;
-
-  result.next_node.position = node->position;
-  (&(result.next_node.position))->history = &(node->position);
-*/
-  // Make the move, and get any victim pieces.
-  //result.next_node.position = node->position;
-  //(&(result.next_node.position))->history = &node->position;
-  //victims_t victims = make_move(&(node->position), &(result.next_node.position),
-    //                            mv);
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // We have searched as many serial nodes as we need to. Break and start searching parallely
