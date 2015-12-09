@@ -159,9 +159,9 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     num_moves_tried++;
     (*node_count_serial)++;
 
-    if (mv_index > 0) {
-      unmake_move(&(node->position), &(result.next_node.position), (&(result.next_node.position))->last_move);
-    }
+//    if (mv_index > 0) {
+//      unmake_move(&(node->position), &(result.next_node.position), (&(result.next_node.position))->last_move);
+//    }
 
 //    result.next_node.position = node->position;
 //    (&(result.next_node.position))->history = &node->position;

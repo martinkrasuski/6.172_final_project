@@ -505,9 +505,9 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
       }
     });
 
-//  *p = *old; // needs to copy key
+  *p = *old; // needs to copy key
 
-//  p->history = old; // TODO may not need
+  p->history = old; // TODO may not need
   p->last_move = mv;
 
   tbassert(from_sq < ARR_SIZE && from_sq > 0, "from_sq: %d\n", from_sq);

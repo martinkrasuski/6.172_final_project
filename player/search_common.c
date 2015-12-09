@@ -265,6 +265,7 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
   // Make the move, and get any victim pieces.
 //  result->next_node.position = node->position;
 //  (&(result->next_node.position))->history = &node->position;
+
   victims_t victims = make_move(&(node->position), &(result->next_node.position),
                                 mv);
 
