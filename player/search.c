@@ -145,9 +145,6 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
   moveEvaluationResult result;
   result.next_node.subpv[0] = 0;
   result.next_node.parent = node;
-  
-   result.next_node.position = node->position;
-  (&(result.next_node.position))->history = &(node->position);
 
   // Start searching moves.
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
@@ -159,13 +156,6 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
     num_moves_tried++;
     (*node_count_serial)++;
 
-//    if (mv_index > 0) {
-//      unmake_move(&(node->position), &(result.next_node.position), (&(result.next_node.position))->last_move);
-//    }
-
-//    result.next_node.position = node->position;
-//    (&(result.next_node.position))->history = &node->position;
- 
     evaluateMove(node, mv, killer_a, killer_b,
                  SEARCH_PV,
                  node_count_serial,
@@ -252,24 +242,15 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   rootNode.parent = NULL;
   initialize_root_node(&rootNode, alpha, beta, depth, ply, p);
 
-
   assert(rootNode.best_score == alpha);  // initial conditions
 
   searchNode next_node;
   next_node.subpv[0] = 0;
   next_node.parent = &rootNode;
 
-  next_node.position = rootNode.position; // needs to copy key
-  //(&(next_node.position))->last_move = 0;
-  (&(next_node.position))->history = &rootNode.position;
-
   score_t score;
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
-
-//    if (mv_index > 0) {
-//      unmake_move(&(rootNode.position), &(next_node.position), (&(next_node.position))->last_move);
-//    }
     move_t mv = get_move(move_list[mv_index]);
 
     if (TRACE_MOVES) {
@@ -277,9 +258,7 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
     }
 
     (*node_count_serial)++;
-    next_node.position = rootNode.position;
     // make the move.
-    //next_node.position = rootNode.position;
     victims_t x = make_move(&(rootNode.position), &(next_node.position), mv);
     if (is_KO(x)) {
       continue;  // not a legal move

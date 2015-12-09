@@ -258,13 +258,6 @@ void evaluateMove(searchNode *node, move_t mv, move_t killer_a,
                                   moveEvaluationResult *result) {
   int ext = 0;  // extensions
   bool blunder = false;  // shoot our own piece
-  //moveEvaluationResult result;
-  //result.next_node.subpv[0] = 0;
-  //result.next_node.parent = node;
-
-  // Make the move, and get any victim pieces.
-//  result->next_node.position = node->position;
-//  (&(result->next_node.position))->history = &node->position;
 
   victims_t victims = make_move(&(node->position), &(result->next_node.position),
                                 mv);

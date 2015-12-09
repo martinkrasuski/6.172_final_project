@@ -187,8 +187,6 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
 void do_perft(position_t *gme, int depth, int ply);
 piece_t low_level_make_move(position_t *old, position_t *p, move_t mv);
 victims_t make_move(position_t *old, position_t *p, move_t mv);
-void low_level_unmake_move(position_t *old, position_t *p, const move_t mv);
-void unmake_move(position_t *old, position_t *p, const move_t mv);
 void display(position_t *p);
 uint64_t compute_zob_key(position_t *p);
 

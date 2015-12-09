@@ -126,17 +126,6 @@ static score_t scout_search(searchNode *node, const int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
-//    moveEvaluationResult result;
-//    result.next_node.subpv[0] = 0;
-//    result.next_node.parent = node;
-
-    result.next_node.position = node->position;
-    (&(result.next_node.position))->history = &node->position;
-
-//    if (mv_index > 0) {
-//      unmake_move(&(node->position), &(result.next_node.position), (&(result.next_node.position))->last_move);
-//    }
-
     evaluateMove(node, mv, killer_a, killer_b,
                  SEARCH_SCOUT,
                  node_count_serial,
@@ -169,14 +158,7 @@ static score_t scout_search(searchNode *node, const int depth,
   
   // We have not found a cutoff, continue to search parallely
   if (!(node->abort)) {
-/*
-  moveEvaluationResult result;
-  result.next_node.subpv[0] = 0;
-  result.next_node.parent = node;
 
-  result.next_node.position = node->position;
-  (&(result.next_node.position))->history = &(node->position);
-*/
   int start_value = number_of_moves_evaluated;
 
   sort_incremental(move_list, num_of_moves, number_of_moves_evaluated);
@@ -200,13 +182,6 @@ static score_t scout_search(searchNode *node, const int depth,
       moveEvaluationResult result;
       result.next_node.subpv[0] = 0;
       result.next_node.parent = node;
-
-
-     // if (mv_index > start_value) {
-     //   unmake_move(&(node->position), &(result.next_node.position), mv);
-     // }
-      result.next_node.position = node->position;
-      (&(result.next_node.position))->history = &node->position;
 
       evaluateMove(node, mv, killer_a, killer_b,
                             SEARCH_SCOUT,
