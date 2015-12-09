@@ -656,7 +656,6 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   if (stomped_sq == 0) {
     p->victims.stomped = 0;
-    p->victims.victim_sq = 0;
     // Don't check for Ko yet.
 
   } else {  // we definitely stomped something
@@ -695,7 +694,6 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   if (victim_sq == 0) {
     p->victims.zapped = 0;
-    p->victims.victim_sq = 0;
     if (USE_KO &&  // Ko rule
         zero_victims(p->victims) &&
         (p->key == (old->key ^ zob_color))) {
@@ -706,7 +704,6 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
   } else {  // we definitely hit something with laser
     color_t zapped_color = color_of(p->board[victim_sq]);
     p->victims.zapped = p->board[victim_sq];
-    p->victims.victim_sq = victim_sq;
     p->key ^= zob[victim_sq][p->victims.zapped];   // remove from board
     p->board[victim_sq] = 0;
     p->key ^= zob[victim_sq][0];

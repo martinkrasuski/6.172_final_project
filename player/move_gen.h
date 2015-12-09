@@ -122,8 +122,6 @@ typedef enum {
 typedef struct victims_t {
   piece_t stomped;
   piece_t zapped;
-//  square_t stomped_sq;
-  square_t victim_sq;
 } victims_t;
 
 // The maximum value a one byte (8 bit) unsigned integer can be
