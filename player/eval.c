@@ -135,14 +135,14 @@ ev_score_t kaggressive(const position_t *p, const fil_t f, const rnk_t r) {
 // mark_mask: what each square is marked with
 void mark_laser_path(position_t *p, char *laser_map, const color_t c,
                      const char mark_mask) {
-  position_t np = *p;
+  position_t * np = p;
 
   // Fire laser, recording in laser_map
-  square_t sq = np.kloc[c];
-  int8_t bdir = ori_of(np.board[sq]);
+  square_t sq = np->kloc[c];
+  int8_t bdir = ori_of(np->board[sq]);
 
-  tbassert(ptype_of(np.board[sq]) == KING,
-           "ptype: %d\n", ptype_of(np.board[sq]));
+  tbassert(ptype_of(np->board[sq]) == KING,
+           "ptype: %d\n", ptype_of(np->board[sq]));
   laser_map[sq] |= mark_mask;
   int8_t beam = beam_of(bdir);
 
@@ -295,8 +295,7 @@ score_t eval(position_t *p, const bool verbose) {
   //  int corner[2][2] = { {INF, INF}, {INF, INF} };
   ev_score_t bonus;
   //char buf[MAX_CHARS_IN_MOVE]; used for debugging/verbose purposes
-  uint8_t white_pawns = 0;
-  uint8_t black_pawns = 0;
+  uint8_t number_pawns[2] = {0,0};
   rnk_t king_max_rnk = 0;
   rnk_t king_min_rnk = 16;
   fil_t king_max_fil = 0;
@@ -326,11 +325,7 @@ score_t eval(position_t *p, const bool verbose) {
       if(sq == 0) continue;
       const fil_t f = fil_of(sq);
       const rnk_t r = rnk_of(sq);
-      if(c == WHITE) {
-         white_pawns++;
-      } else {
-         black_pawns++;
-      }
+      number_pawns[c]++;
       // MATERIAL heuristic: Bonus for each Pawn
       bonus = PAWN_EV_VALUE;
       /*if (verbose) {
@@ -388,9 +383,9 @@ score_t eval(position_t *p, const bool verbose) {
     }*/
 
   // PAWNPIN Heuristic --- is a pawn immobilized by the enemy laser.
-  const int w_pawnpin = PAWNPIN * (white_pawns - w_heuristics->pawnpin);
+  const int w_pawnpin = PAWNPIN * (number_pawns[WHITE] - w_heuristics->pawnpin);
   score[WHITE] += w_pawnpin;
-  const int b_pawnpin = PAWNPIN * (black_pawns - b_heuristics->pawnpin);
+  const int b_pawnpin = PAWNPIN * (number_pawns[BLACK] - b_heuristics->pawnpin);
   score[BLACK] += b_pawnpin;
 
   // score from WHITE point of view
