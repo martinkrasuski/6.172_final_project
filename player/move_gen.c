@@ -507,7 +507,7 @@ square_t low_level_make_move(position_t *old, position_t *p, const move_t mv) {
 
   *p = *old; // needs to copy key
 
-  p->history = old; // TODO may not need
+  p->history = old;
   p->last_move = mv;
 
   tbassert(from_sq < ARR_SIZE && from_sq > 0, "from_sq: %d\n", from_sq);
@@ -660,7 +660,6 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   } else {  // we definitely stomped something
     p->victims.stomped = p->board[stomped_sq];
-    //p->victims.stomped_sq = stomped_sq;
 
     const color_t stomped_color = color_of(p->board[stomped_sq]);
     p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
