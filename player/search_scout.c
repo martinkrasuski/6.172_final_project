@@ -105,9 +105,6 @@ static score_t scout_search(searchNode *node, const int depth,
   result.next_node.subpv[0] = 0;
   result.next_node.parent = node;
 
-  result.next_node.position = node->position;
-  (&(result.next_node.position))->history = &node->position;
-
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // We have searched as many serial nodes as we need to. Break and start searching parallely
     if (node->legal_move_count > YOUNG_BROTHERS_WAIT) {
