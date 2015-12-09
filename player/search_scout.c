@@ -51,7 +51,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-  // __cilkrts_set_param("nworkers","8");
+  //__cilkrts_set_param("nworkers","1");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
