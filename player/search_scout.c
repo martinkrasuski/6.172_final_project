@@ -51,7 +51,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-  // __cilkrts_set_param("nworkers","1");
+  //__cilkrts_set_param("nworkers","1");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -111,7 +111,7 @@ static score_t scout_search(searchNode *node, const int depth,
       break;
     }
     // Get the next move from the move list.
-    int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+    int local_index = number_of_moves_evaluated++;
     // Added this line to use our new incremental_sort implementation, wasn't originally here
     sort_incremental_new(move_list, num_of_moves, local_index);
     move_t mv = get_move(move_list[local_index]);
@@ -136,8 +136,8 @@ static score_t scout_search(searchNode *node, const int depth,
     // A legal move is a move that's not KO, but when we are in quiescence
     // we only want to count moves that has a capture.
     if (result.type == MOVE_EVALUATED) {
-      //node->legal_move_count++;
-      __sync_fetch_and_add(&node->legal_move_count, 1); 
+      node->legal_move_count++;
+      //__sync_fetch_and_add(&node->legal_move_count, 1); 
     }
 
     // process the score. Note that this mutates fields in node.
