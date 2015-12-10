@@ -177,13 +177,13 @@ void mark_laser_path(position_t *p, char *laser_map, const color_t c,
 // Harmonic-ish distance: 1/(|dx|+1) + 1/(|dy|+1)
 // Because we don't want a divide by 0 error, we add one to the dx/dy values
 float h_dist(square_t a, square_t b) {
-    float delta_fil = fil_of(a) - fil_of(b);
+    int delta_fil = fil_of(a) - fil_of(b);
     delta_fil = delta_fil < 0 ? -(delta_fil) : delta_fil;
-    float delta_rnk = rnk_of(a) - rnk_of(b);
+    int delta_rnk = rnk_of(a) - rnk_of(b);
     delta_rnk = delta_rnk < 0 ? -(delta_rnk) : delta_rnk; 
     delta_fil++;
     delta_rnk++;
-    return (delta_rnk + delta_fil)/(delta_rnk*delta_fil);
+    return ((float)(delta_rnk + delta_fil))/((float)(delta_rnk*delta_fil));
 }
 
 // Marks the path of the laser until it hits a piece or goes off the board.
