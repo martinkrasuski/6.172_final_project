@@ -138,8 +138,8 @@ static score_t scout_search(searchNode *node, const int depth,
     // A legal move is a move that's not KO, but when we are in quiescence
     // we only want to count moves that has a capture.
     if (result.type == MOVE_EVALUATED) {
-      node->legal_move_count++;
-      //__sync_fetch_and_add(&node->legal_move_count, 1); 
+      //node->legal_move_count++;
+      __sync_fetch_and_add(&node->legal_move_count, 1); 
     }
 
     // process the score. Note that this mutates fields in node.
