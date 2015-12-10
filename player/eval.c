@@ -42,7 +42,7 @@ ev_score_t pcentral(const fil_t f, const rnk_t r) {
   if (df < 0)  df = f - BOARD_WIDTH/2;
   int dr  = BOARD_WIDTH/2 - r -1;
   if (dr < 0) dr = r - BOARD_WIDTH/2;
-  const double bonus = 1 - sqrt(df * df + dr * dr) / (BONUS_DIVISOR);
+  const double bonus = 1 - sqrt(df * df + dr * dr)*BONUS_MULTIPLIER;
   return PCENTRAL * bonus;
 }
 
@@ -135,14 +135,13 @@ ev_score_t kaggressive(const position_t *p, const fil_t f, const rnk_t r) {
 // mark_mask: what each square is marked with
 void mark_laser_path(position_t *p, char *laser_map, const color_t c,
                      const char mark_mask) {
-  position_t * np = p;
 
   // Fire laser, recording in laser_map
-  square_t sq = np->kloc[c];
-  int8_t bdir = ori_of(np->board[sq]);
+  square_t sq = p->kloc[c];
+  int8_t bdir = ori_of(p->board[sq]);
 
-  tbassert(ptype_of(np->board[sq]) == KING,
-           "ptype: %d\n", ptype_of(np->board[sq]));
+  tbassert(ptype_of(p->board[sq]) == KING,
+           "ptype: %d\n", ptype_of(p->board[sq]));
   laser_map[sq] |= mark_mask;
   int8_t beam = beam_of(bdir);
 
@@ -150,8 +149,8 @@ void mark_laser_path(position_t *p, char *laser_map, const color_t c,
     sq += beam;
     laser_map[sq] |= mark_mask;
     tbassert(sq < ARR_SIZE && sq >= 0, "sq: %d\n", sq);
-
-    switch (ptype_of(p->board[sq])) {
+    ptype_t typ = ptype_of(p->board[sq]);
+    switch (typ) {
       case EMPTY:  // empty square
         break;
       case PAWN:  // Pawn
@@ -203,15 +202,14 @@ float h_dist(square_t a, square_t b) {
 // h_attackable adds the harmonic distance from a marked laser square to the enemy square
 // closer the laser is to enemy king, higher the value is
 heuristics_t * mark_laser_path_heuristics(position_t *p, const color_t c, heuristics_t * heuristics) {
-  position_t * np = p;
   square_t king_sq = p->kloc[opp_color(c)];
   
   // Initialize the h_squares_attackable value
   float h_attackable = 0;
 
   // Fire laser, recording in laser_map
-  square_t sq = np->kloc[c];
-  int8_t bdir = ori_of(np->board[sq]);
+  square_t sq = p->kloc[c];
+  int8_t bdir = ori_of(p->board[sq]);
 
   // Create a bounding box around king's square
   const int8_t right = fil_of(king_sq)+1;
@@ -237,8 +235,8 @@ heuristics_t * mark_laser_path_heuristics(position_t *p, const color_t c, heuris
     }
   }
 
-  tbassert(ptype_of(np->board[sq]) == KING,
-           "ptype: %d\n", ptype_of(np->board[sq]));
+  tbassert(ptype_of(p->board[sq]) == KING,
+           "ptype: %d\n", ptype_of(p->board[sq]));
   int8_t beam = beam_of(bdir);
   h_attackable += h_dist(sq, king_sq);
 

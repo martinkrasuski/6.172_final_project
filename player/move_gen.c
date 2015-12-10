@@ -33,11 +33,12 @@ int old_generate_all(position_t *p, sortable_move_t *sortable_move_list,
 
 // which color is moving next
 color_t color_to_move_of(const position_t *p) {
-  if ((p->ply & 1) == 0) {
+  /*if ((p->ply & 1) == 0) {
     return WHITE;
   } else {
     return BLACK;
-  }
+    }*/
+  return (p->ply & 1) == 0 ? WHITE : BLACK;
 }
 
 inline color_t color_of(const piece_t x) {
@@ -45,11 +46,12 @@ inline color_t color_of(const piece_t x) {
 }
 
 color_t opp_color(const color_t c) {
-  if (c == WHITE) {
+  /*if (c == WHITE) {
     return BLACK;
   } else {
     return WHITE;
-  }
+    }*/
+  return (c == WHITE) ? BLACK : WHITE;
 }
 
 
@@ -400,9 +402,10 @@ int generate_all(position_t *p, sortable_move_t *sortable_move_list,
             // Skip moves into invalid squares, squares occupied by
             // kings, nonempty squares if x is a king, and squares with
             // pawns of matching color
-            if (ptype_of(p->board[dest]) == INVALID ||
-                ptype_of(p->board[dest]) == KING ||
-                (ptype_of(p->board[dest]) == PAWN &&
+            ptype_t typ = ptype_of(p->board[dest]);
+            if (typ == INVALID ||
+                typ == KING ||
+                (typ == PAWN &&
                  color == color_of(p->board[dest]))) {
               continue;    // illegal square
             }

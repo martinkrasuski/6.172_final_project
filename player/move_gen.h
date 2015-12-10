@@ -23,6 +23,7 @@
 #define BOARD_WIDTH 10
 // bonus divisor for pcentral method in eval.c
 #define BONUS_DIVISOR 10 / sqrt(2)
+#define BONUS_MULTIPLIER sqrt(2) / 10
 typedef uint8_t square_t;
 typedef uint8_t rnk_t;
 typedef uint8_t fil_t;
