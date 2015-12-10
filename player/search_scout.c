@@ -96,7 +96,7 @@ static score_t scout_search(searchNode *node, const int depth,
   init_simple_mutex(&node_mutex);
 
   // Sort the move list.
-//  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
+  //  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
   
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
@@ -110,10 +110,12 @@ static score_t scout_search(searchNode *node, const int depth,
     if (node->legal_move_count > YOUNG_BROTHERS_WAIT) {
       break;
     }
+
+    // Sort the move list.
+    sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
     // Get the next move from the move list.
     int local_index = number_of_moves_evaluated++;
     // Added this line to use our new incremental_sort implementation, wasn't originally here
-    sort_incremental_new(move_list, num_of_moves, local_index);
     move_t mv = get_move(move_list[local_index]);
 
     if (TRACE_MOVES) {
