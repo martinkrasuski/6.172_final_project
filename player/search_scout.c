@@ -51,7 +51,7 @@ static void initialize_scout_node(searchNode *node, const int depth) {
 
 static score_t scout_search(searchNode *node, const int depth,
                             uint64_t *node_count_serial) {
-  // __cilkrts_set_param("nworkers","8");
+  //__cilkrts_set_param("nworkers","1");
   // Initialize the search node.
   initialize_scout_node(node, depth);
 
@@ -96,20 +96,26 @@ static score_t scout_search(searchNode *node, const int depth,
   init_simple_mutex(&node_mutex);
 
   // Sort the move list.
-  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
+  //  sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
   
   // This is the original code here, think it might be in place for parallelizing, so keeping it here
   // but commented out for now
+
+  moveEvaluationResult result;
+  result.next_node.subpv[0] = 0;
+  result.next_node.parent = node;
 
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // We have searched as many serial nodes as we need to. Break and start searching parallely
     if (node->legal_move_count > YOUNG_BROTHERS_WAIT) {
       break;
     }
+
+    // Sort the move list.
+    sort_incremental_new(move_list, num_of_moves, number_of_moves_evaluated);
     // Get the next move from the move list.
-    int local_index = __sync_fetch_and_add(&number_of_moves_evaluated, 1);
+    int local_index = number_of_moves_evaluated++;
     // Added this line to use our new incremental_sort implementation, wasn't originally here
-    sort_incremental_new(move_list, num_of_moves, local_index);
     move_t mv = get_move(move_list[local_index]);
 
     if (TRACE_MOVES) {
@@ -119,9 +125,10 @@ static score_t scout_search(searchNode *node, const int depth,
     // increase node count
     __sync_fetch_and_add(node_count_serial, 1);
 
-    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_SCOUT,
-                                               node_count_serial);
+    evaluateMove(node, mv, killer_a, killer_b,
+                 SEARCH_SCOUT,
+                 node_count_serial,
+                 &result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
         || abortf || parallel_parent_aborted(node)) {
@@ -171,9 +178,14 @@ static score_t scout_search(searchNode *node, const int depth,
       // increase node count
       __sync_fetch_and_add(node_count_serial, 1);
 
-      moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_SCOUT,
-                                               node_count_serial);
+      moveEvaluationResult result;
+      result.next_node.subpv[0] = 0;
+      result.next_node.parent = node;
+
+      evaluateMove(node, mv, killer_a, killer_b,
+                            SEARCH_SCOUT,
+                            node_count_serial,
+                            &result);
 
       if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE
           || abortf || parallel_parent_aborted(node)) {

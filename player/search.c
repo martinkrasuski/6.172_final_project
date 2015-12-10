@@ -142,20 +142,24 @@ static score_t searchPV(searchNode *node, int depth, uint64_t *node_count_serial
   int num_of_moves = get_sortable_move_list(node, move_list, hash_table_move);
   int num_moves_tried = 0;
 
+  moveEvaluationResult result;
+  result.next_node.subpv[0] = 0;
+  result.next_node.parent = node;
+
   // Start searching moves.
   for (int mv_index = 0; mv_index < num_of_moves; mv_index++) {
     // Incrementally sort the move list.
     sort_incremental_new(move_list, num_of_moves, mv_index);
 
-    tbassert(false, "stopped\n");
     move_t mv = get_move(move_list[mv_index]);
 
     num_moves_tried++;
     (*node_count_serial)++;
 
-    moveEvaluationResult result = evaluateMove(node, mv, killer_a, killer_b,
-                                               SEARCH_PV,
-                                               node_count_serial);
+    evaluateMove(node, mv, killer_a, killer_b,
+                 SEARCH_PV,
+                 node_count_serial,
+                 &result);
 
     if (result.type == MOVE_ILLEGAL || result.type == MOVE_IGNORE) {
       continue;
@@ -238,7 +242,6 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
   rootNode.parent = NULL;
   initialize_root_node(&rootNode, alpha, beta, depth, ply, p);
 
-
   assert(rootNode.best_score == alpha);  // initial conditions
 
   searchNode next_node;
@@ -255,10 +258,8 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
     }
 
     (*node_count_serial)++;
-
     // make the move.
     victims_t x = make_move(&(rootNode.position), &(next_node.position), mv);
-
     if (is_KO(x)) {
       continue;  // not a legal move
     }
@@ -278,14 +279,12 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
     if (mv_index == 0 || rootNode.depth == 1) {
       // We guess that the first move is the principle variation
       score = -searchPV(&next_node, rootNode.depth-1, node_count_serial);
-
       // Check if we should abort due to time control.
       if (abortf) {
         return 0;
       }
     } else {
       score = -scout_search(&next_node, rootNode.depth-1, node_count_serial);
-
       // Check if we should abort due to time control.
       if (abortf) {
         return 0;
@@ -299,9 +298,11 @@ score_t searchRoot(position_t *p, score_t alpha, score_t beta, int depth,
           return 0;
         }
       }
+
     }
 
   scored:
+
     // only valid for the root node:
     tbassert((score > rootNode.best_score) == (score > rootNode.alpha),
              "score = %d, best = %d, alpha = %d\n", score, rootNode.best_score, rootNode.alpha);

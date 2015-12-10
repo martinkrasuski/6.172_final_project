@@ -248,6 +248,7 @@ void move_to_str(const move_t mv, char *buf, const size_t bufsize) {
   const square_t f = from_square(mv);  // from-square
   const square_t t = to_square(mv);    // to-square
   const rot_t r = rot_of(mv);          // rotation
+
   const char *orig_buf = buf;
 
   buf += square_to_str(f, buf, bufsize);
@@ -658,11 +659,11 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   if (stomped_sq == 0) {
     p->victims.stomped = 0;
-
     // Don't check for Ko yet.
 
   } else {  // we definitely stomped something
     p->victims.stomped = p->board[stomped_sq];
+
     const color_t stomped_color = color_of(p->board[stomped_sq]);
     p->key ^= zob[stomped_sq][p->victims.stomped];   // remove from board
     p->board[stomped_sq] = 0;
@@ -695,7 +696,6 @@ victims_t make_move(position_t *old, position_t *p, const move_t mv) {
 
   if (victim_sq == 0) {
     p->victims.zapped = 0;
-
     if (USE_KO &&  // Ko rule
         zero_victims(p->victims) &&
         (p->key == (old->key ^ zob_color))) {
